@@ -15,3 +15,16 @@ Documentación de referencia para el proyecto. Listado de componentes y precios 
 | **TOTAL ESTIMADO** | | **$232.900** | |
 
 *Precios de referencia; pueden variar según fecha y tienda.*
+|KIT COMPLETO
+|RASPBERRY PI 5 8GB GABINETE 256GB FAN COOLER
+|1x Raspberry pi 5 8gb
+|1x MicroSD 256gb
+|1x Gabinete
+|1x Fan Cooler
+|1x Disipadores
+|1x Adaptador Micro HDMI
+|1x Fuente de alimentación 5V5A (sin PD) con adaptador a USB tipo C
+
+|Kit completo para desarrollo Raspberry pi 5. Con este kit podrás armar varios proyectos, desde un puesto de trabajo básico hasta un robot.
+
+|$400000
