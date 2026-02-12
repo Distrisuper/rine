@@ -1,8 +1,11 @@
-from app.services.queue_service import fetch_next_invoice
+from app.services.queue_service import QueueService
 from app.models import PrintQueueResponse
 
+
 class QueueController:
+    """Controlador para operaciones de cola de impresión."""
+
     @staticmethod
-    async def next_invoice(limit: int, host: int) -> PrintQueueResponse:
-        """Controlador para obtener el siguiente comprobante en la cola."""
-        return await fetch_next_invoice(limit=limit, host=host)
+    async def get_next(service: QueueService, limit: int, host: int) -> PrintQueueResponse:
+        """Obtiene el siguiente comprobante en la cola."""
+        return await service.get_next(limit, host)
