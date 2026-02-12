@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class QueueItem(BaseModel):
     """Ítem en la cola de impresión."""
 
@@ -10,11 +11,11 @@ class QueueItem(BaseModel):
     client_name: str
     order_number: int
     type: str
-    type_code: Optional[str] = None
+    type_code: int | str | None = None
     location: str
     channel: int
     invoice_type: Optional[str] = None
-    invoice_number: Optional[str] = None
+    invoice_number: int | str | None = None
     invoice_comment: str
     invoice_total: Optional[float] = None
     result: int
@@ -29,7 +30,7 @@ class QueueItem(BaseModel):
     date_created: str
     date_started: Optional[str] = None
     date_processed: Optional[str] = None
-    extra_data: str
+    extra_data: Optional[str] = None
 
 
 class PrintQueueResponse(BaseModel):
