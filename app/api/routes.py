@@ -21,17 +21,17 @@ async def health():
 @router.get(
     "/queue/next",
     summary="Siguiente factura",
-    description="Obtiene la proxima factura en cola usando los parametros de consulta `limite` y `host`.",
+    description="Obtiene la proxima factura en cola usando los parametros de consulta `limit` y `host`.",
     response_model=PrintQueueResponse,
 )
 async def queue_next(
-    limite: int = Query(1, ge=1, le=100, description="Cantidad máxima de registros a pedir."),
+    limit: int = Query(1, ge=1, le=100, description="Cantidad máxima de registros a pedir."),
     host: int = Query(..., description="Identificador del host que solicita la factura."),
 ) -> PrintQueueResponse:
     try:
         settings = get_settings()
         http_client = HttpxClient()
         service = QueueService(http_client, settings)
-        return await QueueController.get_next(service, limite, host)
+        return await QueueController.get_next(service, limit, host)
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
