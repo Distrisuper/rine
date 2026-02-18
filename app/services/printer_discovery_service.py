@@ -16,7 +16,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-# En Windows: poner RINE_MOCK_PRINTERS=1 para devolver impresoras de prueba
+# RINE_MOCK_PRINTERS=1 (cualquier plataforma): devolver impresoras de prueba sin requerir CUPS/impresoras reales
 def _mock_impresoras_habilitado() -> bool:
     return os.environ.get("RINE_MOCK_PRINTERS", "").strip().lower() in ("1", "true", "yes")
 
@@ -78,9 +78,12 @@ ESTADO_CODIGO_NOT_READY = 0
 
 
 def _respuesta_mock_flota() -> dict[str, Any]:
-    """Datos de prueba para desarrollo en Windows (sin CUPS)."""
+    """
+    Datos de prueba para desarrollo sin CUPS (Windows, Linux sin impresoras).
+    _cups_unavailable: True (CUPS no se usó). _mock: True (datos simulados).
+    """
     return {
-        "_cups_unavailable": False,
+        "_cups_unavailable": True,
         "_mock": True,
         "printers": {
             "PC42t": {
@@ -144,24 +147,40 @@ def monitorear_flota() -> dict[str, Any]:
             continue
 
         reasons_raw = attrs.get("printer-state-reasons") or ["none"]
+        # Normalizar a lista
         if isinstance(reasons_raw, (bytes, str)):
-            reasons_raw = [reasons_raw] if isinstance(reasons_raw, str) else [reasons_raw.decode("utf-8")]
-        reasons = [r if isinstance(r, str) else str(r) for r in reasons_raw]
+            reasons_raw = [reasons_raw]
+        elif not isinstance(reasons_raw, (list, tuple, set)):
+            reasons_raw = [reasons_raw]
+        # Normalizar cada elemento a str
+        reasons: list[str] = []
+        for r in reasons_raw:
+            if isinstance(r, bytes):
+                try:
+                    reasons.append(r.decode("utf-8"))
+                except UnicodeDecodeError:
+                    reasons.append(r.decode("utf-8", errors="replace"))
+            else:
+                reasons.append(str(r))
 
         errores_detectados = [r for r in reasons if r and r != "none"]
         razones_not_ready = [r for r in errores_detectados if r in RAZONES_NOT_READY]
-        # Cualquier razón desconocida también la consideramos "not ready" por seguridad
+        # Otras razones (desconocidas o solo informativas) se reportan en detalles pero no bloquean
         otras = [r for r in errores_detectados if r not in RAZONES_NOT_READY]
-        todas_not_ready = razones_not_ready or otras
 
         cups_state = attrs.get("printer-state")
         stopped = cups_state == CUPS_STATE_STOPPED
-        ready = not stopped and not todas_not_ready
+        # Solo las razones conocidas en RAZONES_NOT_READY marcan not_ready; razones desconocidas no bloquean
+        tiene_bloqueo_conocido = bool(razones_not_ready)
+        ready = not stopped and not tiene_bloqueo_conocido
 
-        if todas_not_ready:
-            razon = MAPEO_ERRORES.get(todas_not_ready[0], todas_not_ready[0])
+        if razones_not_ready:
+            razon_key = razones_not_ready[0]
+        elif otras:
+            razon_key = otras[0]
         else:
-            razon = None
+            razon_key = None
+        razon = MAPEO_ERRORES.get(razon_key, razon_key) if razon_key else None
 
         result["printers"][name] = {
             "ready": ready,
@@ -180,9 +199,10 @@ def monitorear_flota() -> dict[str, Any]:
 def estado_impresora(nombre: str) -> dict[str, Any] | None:
     """
     Estado de una sola impresora por nombre.
-    Retorna None si la impresora no existe o CUPS no está disponible.
+    Retorna None si la impresora no existe.
+    En modo mock respeta los datos de prueba (no devuelve None por _cups_unavailable).
     """
     flota = monitorear_flota()
-    if flota.get("_cups_unavailable"):
+    if flota.get("_cups_unavailable") and not flota.get("_mock"):
         return None
     return flota.get("printers", {}).get(nombre)

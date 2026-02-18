@@ -16,13 +16,13 @@ Estado de la flota vía CUPS (ready/not_ready por impresora). Para probar por in
 - **Flota completa:** `GET /printers/status` — JSON con todas las impresoras y su estado.
 - **Una impresora:** `GET /printers/status/{nombre}` — 404 si no existe o CUPS no disponible.
 
-En Windows CUPS no está disponible; la API responde con `_cups_unavailable: true` y `printers: {}`. En Linux/Raspberry con CUPS instalado se listan las impresoras reales.
+En Windows, **sin** `RINE_MOCK_PRINTERS=1`, CUPS no está disponible; la API responde con `_cups_unavailable: true` y `printers: {}`. Con el mock habilitado devuelve datos de prueba. En Linux/Raspberry con CUPS instalado se listan las impresoras reales.
 
-**Testing:** Levantar la API (`uvicorn app.main:app --reload`) y abrir en el navegador la documentación interactiva: `http://127.0.0.1:8000/docs` → probar `GET /printers/status`. O con curl: `curl http://127.0.0.1:8000/printers/status`.
+**Testing:** Levantar la API (`python -m uvicorn app.main:app --reload`) y abrir la documentación interactiva: `http://127.0.0.1:8000/docs` → probar `GET /printers/status`. O con curl: `curl http://127.0.0.1:8000/printers/status`.
 
 #### Probar en Windows (sin CUPS)
 
-En Windows CUPS no existe, así que por defecto verás `_cups_unavailable: true` y `printers: {}`. Para probar la misma respuesta que en la Pi (impresoras listadas con estado):
+En Windows CUPS no existe. Por defecto (sin `RINE_MOCK_PRINTERS=1`) verás `_cups_unavailable: true` y `printers: {}`. Para probar la misma estructura de respuesta que en la Pi (impresoras listadas con estado):
 
 1. Crear un `.env` en la raíz del proyecto (o exportar la variable en la consola).
 2. Definir `RINE_MOCK_PRINTERS=1`.
@@ -36,7 +36,7 @@ La respuesta incluye `"_mock": true` para indicar que son datos de prueba.
 
 En PowerShell (solo para esa sesión):
 ```powershell
-$env:RINE_MOCK_PRINTERS="1"; uvicorn app.main:app --reload
+$env:RINE_MOCK_PRINTERS="1"; python -m uvicorn app.main:app --reload
 ```
 
 ### Raspberry Pi: Honeywell PC42t por USB

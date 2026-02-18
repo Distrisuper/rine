@@ -56,7 +56,7 @@ async def printers_status(discovery: PrinterDiscovery = Depends(get_printer_disc
 
 
 @router.get(
-    "/printers/status/{name:path}",
+    "/printers/status/{name}",
     summary="Estado de una impresora",
     description="Estado de la impresora por nombre. 404 si no existe o CUPS no disponible.",
 )
