@@ -17,7 +17,6 @@ async def root():
 async def health():
     return HelloController.health()
 
-
 @router.get(
     "/queue/next",
     summary="Siguiente factura",
