@@ -68,7 +68,7 @@ docker compose run --rm app python -m unittest discover -s tests
 Ejecución reproducible estilo CI:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+docker compose -f docker-compose.yml run --rm test
 ```
 
 Si tenés Make instalado:
