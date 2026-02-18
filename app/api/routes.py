@@ -1,14 +1,21 @@
 # API routes mínimas
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException
 from app.controllers.hello_controller import HelloController
 from app.controllers.queue_controller import QueueController
 from app.controllers.printer_controller import PrinterController
 from app.models import PrintQueueResponse
 from app.services.queue_service import QueueService
 from app.adapters.httpx_client import HttpxClient
+from app.adapters.cups_printer_discovery import CupsPrinterDiscovery
+from app.interfaces.printer_discovery import PrinterDiscovery
 from app.config import get_settings
 
 router = APIRouter()
+
+
+def get_printer_discovery() -> PrinterDiscovery:
+    """Dependencia: implementación por defecto (CUPS o mock)."""
+    return CupsPrinterDiscovery()
 
 @router.get("/")
 async def root():
@@ -44,8 +51,8 @@ async def queue_next(
     summary="Estado de la flota de impresoras",
     description="Lista todas las impresoras detectadas por CUPS con ready/not_ready y detalles. En Windows devuelve _cups_unavailable.",
 )
-async def printers_status():
-    return PrinterController.get_status()
+async def printers_status(discovery: PrinterDiscovery = Depends(get_printer_discovery)):
+    return PrinterController.get_status(discovery)
 
 
 @router.get(
@@ -53,8 +60,8 @@ async def printers_status():
     summary="Estado de una impresora",
     description="Estado de la impresora por nombre. 404 si no existe o CUPS no disponible.",
 )
-async def printer_status(name: str):
-    data = PrinterController.get_printer_status(name)
+async def printer_status(name: str, discovery: PrinterDiscovery = Depends(get_printer_discovery)):
+    data = PrinterController.get_printer_status(discovery, name)
     if data is None:
         raise HTTPException(status_code=404, detail="Impresora no encontrada o CUPS no disponible")
     return data
