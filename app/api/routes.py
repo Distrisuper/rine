@@ -2,13 +2,9 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from app.controllers.hello_controller import HelloController
 from app.controllers.queue_controller import QueueController
-<<<<<<< HEAD
 from app.controllers.print_controller import PrintController
-from app.models import PrintQueueResponse, PrintRequest, PrintResponse
-=======
 from app.controllers.printer_controller import PrinterController
-from app.models import PrintQueueResponse
->>>>>>> origin/main
+from app.models import PrintQueueResponse, PrintRequest, PrintResponse
 from app.services.queue_service import QueueService
 from app.services.print_service import PrintService
 from app.adapters.httpx_client import HttpxClient
