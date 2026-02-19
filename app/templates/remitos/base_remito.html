@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Remito {{ remito_id or 'N/A' }}</title>
+  <link rel="stylesheet" href="remito.css" />
+  <style>
+    /* Estilos base del remito (editar aquí para dar formato) */
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 40px; color: #222; }
+    .header { border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
+    .titulo { font-size: 22px; font-weight: bold; }
+    .subtitulo { font-size: 11px; color: #555; margin-top: 4px; }
+    .bloque { margin-bottom: 16px; }
+    .bloque label { font-weight: bold; color: #444; display: inline-block; min-width: 90px; }
+    .items { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .items th { text-align: left; border-bottom: 1px solid #333; padding: 8px 6px; }
+    .items td { border-bottom: 1px solid #ddd; padding: 6px; }
+    .total { font-size: 14px; font-weight: bold; margin-top: 12px; text-align: right; }
+    .pie { margin-top: 24px; font-size: 10px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="titulo">Remito</div>
+    <div class="subtitulo">Documento no válido como factura</div>
+  </div>
+
+  <div class="bloque">
+    <label>Nº Remito:</label> {{ remito_id or '—' }}
+  </div>
+  <div class="bloque">
+    <label>Cliente:</label> {{ client_name or '—' }}
+  </div>
+  <div class="bloque">
+    <label>Pedido:</label> {{ order_number or '—' }}
+  </div>
+  <div class="bloque">
+    <label>Dirección:</label> {{ address or '—' }}
+  </div>
+  <div class="bloque">
+    <label>Localidad:</label> {{ city or '—' }}
+  </div>
+
+  {% if items and items|length > 0 %}
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Cant.</th>
+        <th>Precio</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in items %}
+      <tr>
+        <td>{{ row.get('codigo', '—') }}</td>
+        <td>{{ row.get('descripcion', '—') }}</td>
+        <td>{{ row.get('cantidad', '—') }}</td>
+        <td>{{ row.get('precio', '—') }}</td>
+        <td>{{ row.get('subtotal', '—') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="total">Total: $ {{ "%.2f"|format(total) }}</div>
+  <div class="pie">Generado por RINE · Remito {{ remito_id or '' }}</div>
+</body>
+</html>

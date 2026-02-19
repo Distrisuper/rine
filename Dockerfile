@@ -2,9 +2,18 @@ FROM python:3.11-slim AS base
 
 WORKDIR /app
 
-# Install build tools and CUPS development headers for pycups
+# Build tools, CUPS for pycups, and WeasyPrint system deps (libpango, cairo, gdk-pixbuf)
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends build-essential libcups2-dev \
+	&& apt-get install -y --no-install-recommends \
+		build-essential \
+		libcups2-dev \
+		libpango-1.0-0 \
+		libpangoft2-1.0-0 \
+		libgdk-pixbuf2.0-0 \
+		libffi-dev \
+		shared-mime-info \
+		libcairo2 \
+		libpangocairo-1.0-0 \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
