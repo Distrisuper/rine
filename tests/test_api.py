@@ -1,4 +1,9 @@
-# Test API (mínimo)
+"""
+Tests for API endpoints.
+"""
+import unittest
+from fastapi.testclient import TestClient
+from app.main import app
 
 class TestAPI(unittest.TestCase):
     def setUp(self):

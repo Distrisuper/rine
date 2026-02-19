@@ -19,6 +19,7 @@ services:
       - redis
     volumes:
       - ./app:/app/app
+      - ./tests:/app/tests
     restart: always
 
 volumes:
