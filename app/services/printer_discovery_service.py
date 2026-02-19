@@ -126,8 +126,18 @@ def monitorear_flota() -> dict[str, Any]:
             "printers": {},
         }
 
-    conn = cups.Connection()
-    printers = conn.getPrinters()
+    try:
+        conn = cups.Connection()
+        printers = conn.getPrinters()
+    except Exception as e:
+        if _mock_impresoras_habilitado():
+            return _respuesta_mock_flota()
+        return {
+            "_cups_unavailable": True,
+            "message": f"CUPS no accesible: {e}",
+            "printers": {},
+        }
+
     result: dict[str, Any] = {"_cups_unavailable": False, "printers": {}}
 
     for name, info in printers.items():
