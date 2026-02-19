@@ -13,8 +13,11 @@ Tipos soportados cuando la impresora está en CUPS:
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # RINE_MOCK_PRINTERS=1 (cualquier plataforma): devolver impresoras de prueba sin requerir CUPS/impresoras reales
 def _mock_impresoras_habilitado() -> bool:
@@ -110,6 +113,55 @@ def _respuesta_mock_flota() -> dict[str, Any]:
     }
 
 
+def _estado_desde_atributos(attrs: dict[str, Any], modelo_fallback: str = "Genérica") -> dict[str, Any]:
+    """
+    Construye el diccionario de estado de una impresora a partir de atributos IPP/CUPS.
+    Misma estructura que los valores de `printers` en monitorear_flota y _respuesta_mock_flota.
+    """
+    reasons_raw = attrs.get("printer-state-reasons") or ["none"]
+    if isinstance(reasons_raw, (bytes, str)):
+        reasons_raw = [reasons_raw]
+    elif not isinstance(reasons_raw, (list, tuple, set)):
+        reasons_raw = [reasons_raw]
+    reasons: list[str] = []
+    for r in reasons_raw:
+        if isinstance(r, bytes):
+            try:
+                reasons.append(r.decode("utf-8"))
+            except UnicodeDecodeError:
+                reasons.append(r.decode("utf-8", errors="replace"))
+        else:
+            reasons.append(str(r))
+
+    errores_detectados = [r for r in reasons if r and r != "none"]
+    razones_not_ready = [r for r in errores_detectados if r in RAZONES_NOT_READY]
+    otras = [r for r in errores_detectados if r not in RAZONES_NOT_READY]
+
+    cups_state = attrs.get("printer-state")
+    stopped = cups_state == CUPS_STATE_STOPPED
+    tiene_bloqueo_conocido = bool(razones_not_ready)
+    ready = not stopped and not tiene_bloqueo_conocido
+
+    if razones_not_ready:
+        razon_key = razones_not_ready[0]
+    elif otras:
+        razon_key = otras[0]
+    else:
+        razon_key = None
+    razon = MAPEO_ERRORES.get(razon_key, razon_key) if razon_key else None
+
+    return {
+        "ready": ready,
+        "estado": "ready" if ready else "not_ready",
+        "estado_codigo": ESTADO_CODIGO_READY if ready else ESTADO_CODIGO_NOT_READY,
+        "razon": razon,
+        "detalles": errores_detectados,
+        "cups_state": cups_state,
+        "modelo": attrs.get("printer-make-and-model") or attrs.get("printer-info") or modelo_fallback,
+        "ocupada": cups_state == CUPS_STATE_PRINTING,
+    }
+
+
 def monitorear_flota() -> dict[str, Any]:
     """
     Obtiene el estado de todas las impresoras vía CUPS.
@@ -130,11 +182,12 @@ def monitorear_flota() -> dict[str, Any]:
         conn = cups.Connection()
         printers = conn.getPrinters()
     except Exception as e:
+        logger.exception("CUPS no accesible")
         if _mock_impresoras_habilitado():
             return _respuesta_mock_flota()
         return {
             "_cups_unavailable": True,
-            "message": f"CUPS no accesible: {e}",
+            "message": "CUPS no accesible",
             "printers": {},
         }
 
@@ -144,11 +197,12 @@ def monitorear_flota() -> dict[str, Any]:
         try:
             attrs = conn.getPrinterAttributes(name)
         except Exception as e:
+            logger.warning("Error al leer atributos de %s: %s", name, e)
             result["printers"][name] = {
                 "ready": False,
                 "estado": "not_ready",
                 "estado_codigo": ESTADO_CODIGO_NOT_READY,
-                "razon": f"Error al leer atributos: {e}",
+                "razon": "Error al leer atributos de la impresora",
                 "detalles": [],
                 "cups_state": None,
                 "modelo": info.get("printer-make-and-model", "Desconocida"),
@@ -156,52 +210,9 @@ def monitorear_flota() -> dict[str, Any]:
             }
             continue
 
-        reasons_raw = attrs.get("printer-state-reasons") or ["none"]
-        # Normalizar a lista
-        if isinstance(reasons_raw, (bytes, str)):
-            reasons_raw = [reasons_raw]
-        elif not isinstance(reasons_raw, (list, tuple, set)):
-            reasons_raw = [reasons_raw]
-        # Normalizar cada elemento a str
-        reasons: list[str] = []
-        for r in reasons_raw:
-            if isinstance(r, bytes):
-                try:
-                    reasons.append(r.decode("utf-8"))
-                except UnicodeDecodeError:
-                    reasons.append(r.decode("utf-8", errors="replace"))
-            else:
-                reasons.append(str(r))
-
-        errores_detectados = [r for r in reasons if r and r != "none"]
-        razones_not_ready = [r for r in errores_detectados if r in RAZONES_NOT_READY]
-        # Otras razones (desconocidas o solo informativas) se reportan en detalles pero no bloquean
-        otras = [r for r in errores_detectados if r not in RAZONES_NOT_READY]
-
-        cups_state = attrs.get("printer-state")
-        stopped = cups_state == CUPS_STATE_STOPPED
-        # Solo las razones conocidas en RAZONES_NOT_READY marcan not_ready; razones desconocidas no bloquean
-        tiene_bloqueo_conocido = bool(razones_not_ready)
-        ready = not stopped and not tiene_bloqueo_conocido
-
-        if razones_not_ready:
-            razon_key = razones_not_ready[0]
-        elif otras:
-            razon_key = otras[0]
-        else:
-            razon_key = None
-        razon = MAPEO_ERRORES.get(razon_key, razon_key) if razon_key else None
-
-        result["printers"][name] = {
-            "ready": ready,
-            "estado": "ready" if ready else "not_ready",
-            "estado_codigo": ESTADO_CODIGO_READY if ready else ESTADO_CODIGO_NOT_READY,  # 1=ready, 0=not_ready
-            "razon": razon,
-            "detalles": errores_detectados,
-            "cups_state": cups_state,  # IPP: 3=idle, 4=printing, 5=stopped
-            "modelo": attrs.get("printer-make-and-model") or info.get("printer-make-and-model", "Genérica"),
-            "ocupada": cups_state == CUPS_STATE_PRINTING,
-        }
+        result["printers"][name] = _estado_desde_atributos(
+            attrs, modelo_fallback=info.get("printer-make-and-model", "Genérica")
+        )
 
     return result
 
@@ -211,8 +222,22 @@ def estado_impresora(nombre: str) -> dict[str, Any] | None:
     Estado de una sola impresora por nombre.
     Retorna None si la impresora no existe.
     En modo mock respeta los datos de prueba (no devuelve None por _cups_unavailable).
+    Consulta directa a CUPS por nombre para evitar O(n) de monitorear_flota().
     """
-    flota = monitorear_flota()
-    if flota.get("_cups_unavailable") and not flota.get("_mock"):
+    if not CUPS_AVAILABLE:
+        if _mock_impresoras_habilitado():
+            return _respuesta_mock_flota().get("printers", {}).get(nombre)
         return None
-    return flota.get("printers", {}).get(nombre)
+    try:
+        conn = cups.Connection()
+        attrs = conn.getPrinterAttributes(nombre)
+    except Exception as e:
+        logger.warning("Error al consultar impresora %s: %s", nombre, e)
+        if _mock_impresoras_habilitado():
+            return _respuesta_mock_flota().get("printers", {}).get(nombre)
+        return None
+    if not attrs:
+        if _mock_impresoras_habilitado():
+            return _respuesta_mock_flota().get("printers", {}).get(nombre)
+        return None
+    return _estado_desde_atributos(attrs)
