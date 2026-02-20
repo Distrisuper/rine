@@ -85,9 +85,10 @@ class PrintService:
         ]):
             raise ValueError("PEND requiere: location, package_quantity, pending")
 
+        pending_label = "pendiente" if request.pending else "no pendiente"
         message = (
             f"Imprimiendo redi pendiente para cliente {request.client_code} ({request.client_name}). "
-            f"Cantidad de paquetes pendientes: {request.pending}. "
+            f"Estado: {pending_label}. Cantidad de paquetes: {request.package_quantity}. "
             f"ID Remito: {request.id_remito}. Código REDI: {request.redi_code}."
         )
         return PrintResponse(ok=1, message=message, doc_type="redi pendiente")
