@@ -95,8 +95,13 @@ class TestPrintAPI(unittest.TestCase):
             "id_remito": "REM001",
         }
         response = self.client.post("/print", json=payload)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("inválido", response.json()["detail"])
+        # Pydantic validation should reject the invalid type before reaching the service,
+        # resulting in FastAPI's standard 422 validation error response.
+        self.assertEqual(response.status_code, 422)
+        detail = response.json()["detail"]
+        # 'detail' is a list of error objects; extract their messages and check the enum constraint message.
+        messages = " ".join(str(item.get("msg", "")) for item in detail)
+        self.assertIn("Input should be 'ETIQ', 'REMI', 'GM' or 'PEND'", messages)
 
     def test_print_missing_required_fields(self):
         payload = {
