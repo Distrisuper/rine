@@ -6,7 +6,7 @@ class PrintService:
 
     async def process_print(self, request: PrintRequest) -> PrintResponse:
         """Procesa solicitud de impresión según tipo."""
-        print_type = request.type.upper()
+        print_type = request.type
 
         if print_type == "ETIQ":
             return await self._print_label(request)
