@@ -99,7 +99,6 @@ class SqliteRepository(PrintJobRepository):
             )
             await db.commit()
             job_id = cursor.lastrowid
-            await cursor.close()
 
         return PrintJobRecord(
             id=int(job_id),
