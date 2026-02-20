@@ -4,6 +4,13 @@ from app.models import PrintRequest, PrintResponse
 class PrintService:
     """Servicio para gestionar impresiones."""
 
+    def __init__(self) -> None:
+        """Inicializa el servicio de impresión (punto de inyección de dependencias futuro)."""
+        # Actualmente no hay dependencias externas. Este constructor existe
+        # para mantener consistencia con otros servicios y facilitar
+        # la futura inyección de dependencias (por ejemplo, clientes HTTP,
+        # configuración, etc.).
+
     async def process_print(self, request: PrintRequest) -> PrintResponse:
         """Procesa solicitud de impresión según tipo."""
         print_type = request.type
