@@ -77,7 +77,7 @@ class TestPrintAPI(unittest.TestCase):
             "redi_code": "REDI001",
             "set_host": 1,
             "package_quantity": 5,
-            "pending": 2,
+            "pending": 1,
         }
         response = self.client.post("/print", json=payload)
         self.assertEqual(response.status_code, 200)
