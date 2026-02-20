@@ -4,6 +4,13 @@ from app.models import PrintRequest, PrintResponse
 class PrintService:
     """Servicio para gestionar impresiones."""
 
+    def __init__(self) -> None:
+        """Inicializa el servicio de impresión (punto de inyección de dependencias futuro)."""
+        # Actualmente no hay dependencias externas. Este constructor existe
+        # para mantener consistencia con otros servicios y facilitar
+        # la futura inyección de dependencias (por ejemplo, clientes HTTP,
+        # configuración, etc.).
+
     async def process_print(self, request: PrintRequest) -> PrintResponse:
         """Procesa solicitud de impresión según tipo."""
         print_type = request.type
@@ -78,9 +85,10 @@ class PrintService:
         ]):
             raise ValueError("PEND requiere: location, package_quantity, pending")
 
+        pending_label = "pendiente" if request.pending else "no pendiente"
         message = (
             f"Imprimiendo redi pendiente para cliente {request.client_code} ({request.client_name}). "
-            f"Cantidad de paquetes pendientes: {request.pending}. "
+            f"Estado: {pending_label}. Cantidad de paquetes: {request.package_quantity}. "
             f"ID Remito: {request.id_remito}. Código REDI: {request.redi_code}."
         )
         return PrintResponse(ok=1, message=message, doc_type="redi pendiente")

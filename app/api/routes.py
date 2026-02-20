@@ -1,4 +1,5 @@
 # API routes mínimas
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from app.controllers.hello_controller import HelloController
 from app.controllers.queue_controller import QueueController
@@ -13,6 +14,8 @@ from app.interfaces.printer_discovery import PrinterDiscovery
 from app.config import get_settings
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 def get_printer_discovery() -> PrinterDiscovery:
@@ -124,7 +127,9 @@ async def print_document(request: PrintRequest) -> PrintResponse:
         return await PrintController.process_print(service, request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+    except Exception as e:
+        logger.exception("Unexpected error in print_document: %s", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 # --- Monitoreo de impresoras (CUPS) - testing por interfaz ---
 @router.get(
     "/printers/status",

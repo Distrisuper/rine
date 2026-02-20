@@ -2,6 +2,7 @@
 Tests para endpoints de impresión.
 """
 import unittest
+from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -77,7 +78,7 @@ class TestPrintAPI(unittest.TestCase):
             "redi_code": "REDI001",
             "set_host": 1,
             "package_quantity": 5,
-            "pending": 1,
+            "pending": True,
         }
         response = self.client.post("/print", json=payload)
         self.assertEqual(response.status_code, 200)
@@ -116,6 +117,27 @@ class TestPrintAPI(unittest.TestCase):
         response = self.client.post("/print", json=payload)
         self.assertEqual(response.status_code, 400)
         self.assertIn("requiere", response.json()["detail"])
+
+    def test_print_unexpected_exception_returns_500(self):
+        payload = {
+            "type": "ETIQ",
+            "client_code": "CL001",
+            "client_name": "Distribuidora ABC",
+            "client_address": "Calle Principal 123",
+            "client_city": "Buenos Aires",
+            "set_host": 1,
+            "package_quantity": 5,
+            "redi_code": "REDI001",
+            "id_remito": "REM001",
+            "label_packages": 10,
+        }
+        with patch(
+            "app.controllers.print_controller.PrintController.process_print",
+            new=AsyncMock(side_effect=RuntimeError("unexpected")),
+        ):
+            response = self.client.post("/print", json=payload)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json()["detail"], "Error interno del servidor")
 
 
 if __name__ == "__main__":
