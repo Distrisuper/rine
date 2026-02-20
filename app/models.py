@@ -1,5 +1,15 @@
+from enum import StrEnum
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
+
+
+class PrintJobStatus(StrEnum):
+    """Estados de un trabajo de impresión."""
+
+    PENDIENTE = "PENDIENTE"
+    IMPRIMIENDO = "IMPRIMIENDO"
+    ERROR = "ERROR"
+    FINALIZADO = "FINALIZADO"
 
 class QueueItem(BaseModel):
     """Ítem en la cola de impresión."""
@@ -11,7 +21,6 @@ class QueueItem(BaseModel):
     order_number: int
     type: str
     type_code: int | str | None = None
-    location: str
     channel: int
     invoice_type: Optional[str] = None
     invoice_number: int | str | None = None
@@ -45,16 +54,16 @@ class PrintRequest(BaseModel):
     ## Tipos de impresión y campos requeridos:
 
     ### ETIQ (Etiqueta)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, redi_code, id_remito
 
     ### REMI (Remito)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, redi_code, id_remito
 
     ### GM (Pedido de impresión)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, redi_code, id_remito
 
     ### PEND (Redi pendiente)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, redi_code, id_remito
     """
 
     type: Literal["ETIQ", "REMI", "GM", "PEND"] = Field(
@@ -64,7 +73,7 @@ class PrintRequest(BaseModel):
     )
     client_code: str = Field(..., description="Código del cliente", examples=["06689"])
     client_name: str = Field(..., description="Nombre del cliente", examples=["Sergio Palomo"])
-    set_host: int = Field(..., description="Identificador del host", examples=[301])
+    set_host: Optional[int] = Field(None, description="Identificador del host (opcional)", examples=[301])
     redi_code: str = Field(..., description="Código REDI", examples=["[R5-12345]__"])
     id_remito: str = Field(..., description="ID del remito", examples=["685110"])
 
@@ -81,7 +90,7 @@ class PrintRequest(BaseModel):
     )
     location: Optional[str] = Field(
         None,
-        description="Ubicación/sucursal (requerido para REMI, GM, PEND)",
+        description="Ubicación/sucursal (opcional)",
         examples=["BA"]
     )
     transport_description: Optional[str] = Field(
@@ -127,3 +136,12 @@ class PrintResponse(BaseModel):
     ok: int
     message: str
     doc_type: str
+
+
+class PrintJobRecord(BaseModel):
+    """Registro persistido de un trabajo de impresión."""
+
+    id: int
+    status: PrintJobStatus
+    date_created: str
+    date_processed: Optional[str] = None

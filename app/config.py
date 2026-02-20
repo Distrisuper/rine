@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     invoice_base_url: str | None = Field(default=None, alias="INVOICE_BASE_URL")
+    sqlite_db_path: str = Field(default="data/rine.db", alias="SQLITE_DB_PATH")
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 

@@ -11,3 +11,4 @@ reportlab==4.0.8
 pytest==7.4.4
 pytest-asyncio==0.23.3
 httpx==0.26.0
+aiosqlite==0.19.0
