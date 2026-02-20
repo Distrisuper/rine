@@ -102,13 +102,13 @@ class PrintRequest(BaseModel):
         None,
         description="Cantidad de paquetes (requerido para ETIQ, PEND)",
         examples=[5],
-        ge=0
+        ge=1
     )
     label_packages: Optional[int] = Field(
         None,
-        description="Cantidad de etiquetas (requerido para ETIQ)",
+        description="Cantidad de etiquetas (requerido para ETIQ, REMI)",
         examples=[1],
-        ge=0
+        ge=1
     )
     remitos_quantity: Optional[int] = Field(
         None,
@@ -122,11 +122,10 @@ class PrintRequest(BaseModel):
         examples=[1],
         ge=1
     )
-    pending: Optional[int] = Field(
+    pending: Optional[bool] = Field(
         None,
-        description="Es (1) o no (0) un remito pendiente (requerido para PEND)",
-        examples=[1],
-        ge=0
+        description="Indica si el remito es pendiente (True) o no (False) (requerido para PEND)",
+        examples=[True],
     )
 
 

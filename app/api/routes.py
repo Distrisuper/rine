@@ -14,6 +14,8 @@ from app.config import Settings
 
 router = APIRouter()
 
+logger = logging.getLogger(__name__)
+
 
 def get_printer_discovery() -> PrinterDiscovery:
     """Dependencia: implementación por defecto (CUPS o mock)."""
@@ -121,6 +123,9 @@ async def print_document(
         return await PrintController.process_print(service, request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Unexpected error in print_document: %s", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 # --- Monitoreo de impresoras (CUPS) - testing por interfaz ---
 @router.get(
     "/printers/status",
