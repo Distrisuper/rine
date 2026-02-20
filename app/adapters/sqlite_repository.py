@@ -87,7 +87,6 @@ class SqliteRepository(PrintJobRepository):
                     "client_code": request.client_code,
                     "client_name": request.client_name,
                     "print_type": request.type,
-                    "location": request.location,
                     "status": status.value,
                     "print_count": print_count,
                     "host": request.set_host,
