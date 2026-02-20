@@ -30,12 +30,12 @@ def get_sqlite_repository(settings: Settings = Depends(get_settings)) -> SqliteR
 def get_print_job_repository(
     repository: SqliteRepository = Depends(get_sqlite_repository),
 ) -> PrintJobRepository:
-    """Dependencia: repositorio de trabajos de impresion."""
+    """Dependencia: repositorio de trabajos de impresión."""
     return repository
 
 
 def get_print_service(repository: PrintJobRepository = Depends(get_print_job_repository)) -> PrintService:
-    """Dependencia: servicio de impresion con SQLite."""
+    """Dependencia: servicio de impresión con SQLite."""
     return PrintService(repository)
 
 @router.get("/")
