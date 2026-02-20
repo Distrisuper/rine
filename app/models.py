@@ -45,16 +45,16 @@ class PrintRequest(BaseModel):
     ## Tipos de impresión y campos requeridos:
 
     ### ETIQ (Etiqueta)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, client_address, client_city, package_quantity, label_packages
 
     ### REMI (Remito)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, client_address, client_city, location, remitos_quantity
 
     ### GM (Pedido de impresión)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, location, invoices_quantity
 
     ### PEND (Redi pendiente)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito
+    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, location, package_quantity, pending
     """
 
     type: Literal["ETIQ", "REMI", "GM", "PEND"] = Field(
