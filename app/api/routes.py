@@ -124,6 +124,7 @@ async def print_document(request: PrintRequest) -> PrintResponse:
         return await PrintController.process_print(service, request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 # --- Monitoreo de impresoras (CUPS) - testing por interfaz ---
 @router.get(
     "/printers/status",
