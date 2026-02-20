@@ -1,4 +1,6 @@
 # API routes mínimas
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from app.controllers.hello_controller import HelloController
 from app.controllers.print_controller import PrintController
@@ -22,9 +24,11 @@ def get_printer_discovery() -> PrinterDiscovery:
     return CupsPrinterDiscovery()
 
 
-def get_sqlite_repository(settings: Settings = Depends(get_settings)) -> SqliteRepository:
+async def get_sqlite_repository(settings: Settings = Depends(get_settings)) -> SqliteRepository:
     """Dependencia: repositorio SQLite."""
-    return SqliteRepository(settings.sqlite_db_path)
+    repository = SqliteRepository(settings.sqlite_db_path)
+    await repository.initialize()
+    return repository
 
 
 def get_print_job_repository(
