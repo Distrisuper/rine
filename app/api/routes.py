@@ -1,30 +1,31 @@
 # API routes mínimas
+import base64
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
-logger = logging.getLogger(__name__)
+from app.adapters.cups_printer_discovery import CupsPrinterDiscovery
+from app.adapters.httpx_client import HttpxClient
+from app.config import get_settings
 from app.controllers.hello_controller import HelloController
-from app.controllers.queue_controller import QueueController
 from app.controllers.printer_controller import PrinterController
+from app.controllers.queue_controller import QueueController
 from app.controllers.template_controller import TemplateController
+from app.interfaces.printer_discovery import PrinterDiscovery
 from app.models import PrintQueueResponse, TemplateTestItem
-from app.services.queue_service import QueueService
 from app.services.extra_data_parser import DefaultExtraDataParser
-from app.services.remito_template_resolver import LegacyRemitoTemplateResolver
-from app.services.label_template_resolver import LegacyLabelTemplateResolver
-from app.services.remito_data_provider import InlineRemitoDataProvider
 from app.services.label_data_provider import InlineLabelDataProvider
-from app.services.remito_render_service import PlaceholderRemitoRenderer
 from app.services.label_render_service import PlaceholderLabelRenderer
-from app.services.remito_template_service import RemitoTemplateService
+from app.services.label_template_resolver import LegacyLabelTemplateResolver
 from app.services.label_template_service import LabelTemplateService
 from app.services.print_job_service import print_pdf_to_printer
-from app.adapters.httpx_client import HttpxClient
-from app.adapters.cups_printer_discovery import CupsPrinterDiscovery
-from app.interfaces.printer_discovery import PrinterDiscovery
-from app.config import get_settings
+from app.services.queue_service import QueueService
+from app.services.remito_data_provider import InlineRemitoDataProvider
+from app.services.remito_render_service import PlaceholderRemitoRenderer
+from app.services.remito_template_resolver import LegacyRemitoTemplateResolver
+from app.services.remito_template_service import RemitoTemplateService
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -131,8 +132,6 @@ async def template_remito_test(
     try:
         response = TemplateController.render_remito_test(service, body)
         if format == "json":
-            import base64
-            from fastapi.responses import JSONResponse
             return JSONResponse(content={
                 "content_type": "application/pdf",
                 "size": len(response.body),
@@ -184,8 +183,6 @@ async def template_label_test(
     try:
         response = TemplateController.render_label_test(service, body)
         if format == "json":
-            import base64
-            from fastapi.responses import JSONResponse
             return JSONResponse(content={
                 "content_type": "application/vnd.zpl",
                 "size": len(response.body),

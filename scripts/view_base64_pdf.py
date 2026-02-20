@@ -1,9 +1,10 @@
 """Decodifica content_base64 del JSON de prueba y guarda/abre el PDF."""
 import base64
 import json
-import sys
-import subprocess
+import os
 import platform
+import subprocess
+import sys
 from pathlib import Path
 
 def main():
@@ -26,7 +27,7 @@ def main():
     print(f"Guardado: {out_path.absolute()}")
 
     if platform.system() == "Windows":
-        subprocess.run(["start", "", str(out_path.absolute())], shell=True)
+        os.startfile(str(out_path.absolute()))
     elif platform.system() == "Darwin":
         subprocess.run(["open", str(out_path)])
     else:

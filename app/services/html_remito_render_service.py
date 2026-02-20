@@ -2,9 +2,11 @@
 Render de remito desde template HTML (Jinja2) + CSS → PDF con WeasyPrint.
 El formato se edita en app/templates/remitos/base_remito.html y remito.css.
 """
+from io import BytesIO
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from weasyprint import HTML
 
 from app.interfaces.remito_renderer import RemitoRenderer
 from app.models import RemitoRenderData
@@ -42,12 +44,6 @@ class HtmlRemitoRenderer(RemitoRenderer):
     """
 
     def __init__(self, templates_dir: Path | None = None):
-        try:
-            from weasyprint import HTML  # noqa: F401
-        except ImportError as e:
-            raise RuntimeError(
-                "weasyprint no está instalado. pip install weasyprint"
-            ) from e
         if templates_dir is None:
             templates_dir = Path(__file__).resolve().parent.parent / "templates" / "remitos"
         self._templates_dir = Path(templates_dir)
@@ -67,9 +63,6 @@ class HtmlRemitoRenderer(RemitoRenderer):
     def render(self, template_id: str, data: RemitoRenderData) -> bytes:
         template = self._env.get_template(self._template_name(template_id))
         html_string = template.render(**_data_to_context(data))
-
-        from weasyprint import HTML
-        from io import BytesIO
 
         base_url = self._templates_dir.as_uri() + "/"
         pdf_doc = HTML(string=html_string, base_url=base_url)

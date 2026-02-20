@@ -36,6 +36,8 @@ def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "
     if printer_name not in printers:
         raise ValueError(f"Impresora '{printer_name}' no existe en CUPS. Disponibles: {list(printers.keys())}")
 
+    # CUPS requiere archivo en disco; limpiamos en finally. Si el proceso termina
+    # por SIGKILL/crash antes del finally, el temp puede quedar en el FS (edge case).
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
         f.write(pdf_bytes)
         path = Path(f.name)

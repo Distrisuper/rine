@@ -27,7 +27,8 @@ class InlineRemitoDataProvider(RemitoDataProvider):
         )
         items = []  # TODO: rellenar desde API o extra cuando exista
         total = float(item.invoice_total or 0)
-        cant_unidades = str(sum(int(i.get("cantidad", 0) or 0) for i in items)) if items else ""
+        # cant_unidades se calculará cuando items esté implementado/poblado
+        cant_unidades = ""
         return RemitoRenderData(
             client_name=item.client_name or "",
             client_code=item.client_code or "",
