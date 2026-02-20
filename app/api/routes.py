@@ -1,14 +1,19 @@
 # API routes mínimas
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from app.controllers.hello_controller import HelloController
 from app.controllers.print_controller import PrintController
 from app.controllers.printer_controller import PrinterController
-from app.models import PrintRequest, PrintResponse
+from app.controllers.queue_controller import QueueController
+from app.models import PrintQueueResponse, PrintRequest, PrintResponse
 from app.services.print_service import PrintService
+from app.services.queue_service import QueueService
 from app.adapters.sqlite_repository import SqliteRepository
 from app.adapters.cups_printer_discovery import CupsPrinterDiscovery
 from app.interfaces.print_job_repository import PrintJobRepository
 from app.interfaces.printer_discovery import PrinterDiscovery
+from app.interfaces.queue_repository import QueueRepository
 from app.config import get_settings
 from app.config import Settings
 
@@ -37,6 +42,18 @@ def get_print_job_repository(
 def get_print_service(repository: PrintJobRepository = Depends(get_print_job_repository)) -> PrintService:
     """Dependencia: servicio de impresión con SQLite."""
     return PrintService(repository)
+
+
+def get_queue_repository(
+    repository: SqliteRepository = Depends(get_sqlite_repository),
+) -> QueueRepository:
+    """Dependencia: repositorio de cola de impresión."""
+    return repository
+
+
+def get_queue_service(repository: QueueRepository = Depends(get_queue_repository)) -> QueueService:
+    """Dependencia: servicio de cola de impresión."""
+    return QueueService(repository)
 
 @router.get("/")
 async def root():
@@ -146,3 +163,24 @@ async def printer_status(name: str, discovery: PrinterDiscovery = Depends(get_pr
     if data is None:
         raise HTTPException(status_code=404, detail="Impresora no encontrada o CUPS no disponible")
     return data
+
+
+@router.get(
+    "/queue/next",
+    response_model=PrintQueueResponse,
+    summary="Obtiene los próximos trabajos de la cola",
+    description="Devuelve los próximos trabajos pendientes de la cola para el host indicado y los marca como en proceso.",
+)
+async def queue_next(
+    limit: int = 1,
+    host: int = 0,
+    service: QueueService = Depends(get_queue_service),
+) -> PrintQueueResponse:
+    """Obtiene los próximos trabajos pendientes de la cola."""
+    try:
+        return await QueueController.get_next(service, limit, host)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Unexpected error in queue_next: %s", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
