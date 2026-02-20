@@ -5,7 +5,7 @@ from app.models import QueueItem
 
 
 class QueueRepository(ABC):
-    """Interfaz de persistencia para la cola de impresion."""
+    """Interfaz de persistencia para la cola de impresión."""
 
     @abstractmethod
     async def initialize(self) -> None:
