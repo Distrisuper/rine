@@ -99,7 +99,7 @@ class PrintRequest(BaseModel):
         None,
         description="Cantidad de etiquetas (requerido para ETIQ, REMI)",
         examples=[1],
-        ge=0
+        ge=1
     )
     remitos_quantity: Optional[int] = Field(
         None,
