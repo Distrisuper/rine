@@ -10,6 +10,6 @@ app.include_router(router)
 
 @app.on_event("startup")
 async def startup_event() -> None:
-	settings = get_settings()
-	repository = SqliteRepository(settings.sqlite_db_path)
-	await repository.initialize()
+    settings = get_settings()
+    repository = SqliteRepository(settings.sqlite_db_path)
+    await repository.initialize()
