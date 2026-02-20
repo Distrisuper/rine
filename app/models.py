@@ -84,15 +84,26 @@ class ResolvedTemplate(BaseModel):
 
 
 class RemitoRenderData(BaseModel):
-    """Datos completos para renderizar un remito (PDF)."""
+    """Datos completos para renderizar un remito (PDF). Diseño tipo Distrisuper."""
 
     client_name: str = ""
+    client_code: str = ""
     order_number: str = ""
     address: str = ""
     city: str = ""
     items: list[dict] = []
     total: float = 0.0
     remito_id: str = ""
+    fecha: str = ""
+    reparto: str = ""
+    sucursal: str = ""
+    obs: str = ""
+    cant_unidades: str = ""
+    valor_declarado: str = ""
+    numero_cot: str = ""
+    numero_cai: str = ""
+    vencimiento: str = ""
+    disclaimer: str = ""
 
 
 class LabelRenderData(BaseModel):
@@ -115,6 +126,7 @@ class TemplateTestItem(BaseModel):
     channel: int
     location: str = ""
     extra_data: Optional[str] = None
+    client_code: str = ""
     client_name: str = "Cliente prueba"
     order_number: int = 1
     invoice_total: Optional[float] = None
@@ -127,7 +139,7 @@ class TemplateTestItem(BaseModel):
         return QueueItem(
             id=0,
             client_id="test",
-            client_code="",
+            client_code=self.client_code,
             client_name=self.client_name,
             order_number=self.order_number,
             type="remito" if self.channel in (4, 8) else "etiqueta",

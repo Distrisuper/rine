@@ -1,6 +1,9 @@
 # API routes mínimas
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import Response
+
+logger = logging.getLogger(__name__)
 from app.controllers.hello_controller import HelloController
 from app.controllers.queue_controller import QueueController
 from app.controllers.printer_controller import PrinterController
@@ -16,6 +19,7 @@ from app.services.remito_render_service import PlaceholderRemitoRenderer
 from app.services.label_render_service import PlaceholderLabelRenderer
 from app.services.remito_template_service import RemitoTemplateService
 from app.services.label_template_service import LabelTemplateService
+from app.services.print_job_service import print_pdf_to_printer
 from app.adapters.httpx_client import HttpxClient
 from app.adapters.cups_printer_discovery import CupsPrinterDiscovery
 from app.interfaces.printer_discovery import PrinterDiscovery
@@ -34,7 +38,12 @@ def get_remito_template_service() -> RemitoTemplateService:
     try:
         from app.services.html_remito_render_service import HtmlRemitoRenderer
         renderer = HtmlRemitoRenderer()
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Remito HTML renderer no disponible, usando placeholder PDF: %s",
+            e,
+            exc_info=True,
+        )
         renderer = PlaceholderRemitoRenderer()
     return RemitoTemplateService(
         parser=DefaultExtraDataParser(),
@@ -54,16 +63,19 @@ def get_label_template_service() -> LabelTemplateService:
     )
 
 
-@router.get("/")
+@router.get("/", tags=["Health"])
 async def root():
     return HelloController.root()
 
-@router.get("/health")
+
+@router.get("/health", tags=["Health"])
 async def health():
     return HelloController.health()
 
+
 @router.get(
     "/queue/next",
+    tags=["Queue"],
     summary="Siguiente factura",
     description="Obtiene la proxima factura en cola usando los parametros de consulta `limit` y `host`.",
     response_model=PrintQueueResponse,
@@ -81,9 +93,9 @@ async def queue_next(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- Monitoreo de impresoras (CUPS) - testing por interfaz ---
 @router.get(
     "/printers/status",
+    tags=["Printers"],
     summary="Estado de la flota de impresoras",
     description="Lista todas las impresoras detectadas por CUPS con ready/not_ready y detalles. En Windows devuelve _cups_unavailable.",
 )
@@ -93,6 +105,7 @@ async def printers_status(discovery: PrinterDiscovery = Depends(get_printer_disc
 
 @router.get(
     "/printers/status/{name}",
+    tags=["Printers"],
     summary="Estado de una impresora",
     description="Estado de la impresora por nombre. 404 si no existe o CUPS no disponible.",
 )
@@ -103,9 +116,9 @@ async def printer_status(name: str, discovery: PrinterDiscovery = Depends(get_pr
     return data
 
 
-# --- Prueba de templates (remito PDF / etiqueta ZPL) ---
 @router.post(
-    "/queue/templates/remito/test",
+    "/templates/remito/test",
+    tags=["Templates"],
     summary="Probar template remito (PDF)",
     description="Genera un PDF de remito con datos mock. Body: channel (4 u 8), location, opcional extra_data, server, ds. Si format=json devuelve JSON con content_base64 para inspeccionar.",
     response_class=Response,
@@ -128,10 +141,37 @@ async def template_remito_test(
         return response
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Error generando PDF remito: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post(
-    "/queue/templates/label/test",
+    "/printers/{printer_name}/print/remito",
+    tags=["Printers"],
+    summary="Imprimir remito en una impresora (CUPS)",
+    description="Genera el PDF del remito con el body indicado y envía el trabajo a la impresora por nombre. Solo funciona en Linux con CUPS; la impresora debe existir en CUPS (ej. PC42t). En Windows responde 503.",
+)
+async def print_remito_to_printer(
+    printer_name: str,
+    body: TemplateTestItem,
+    service: RemitoTemplateService = Depends(get_remito_template_service),
+):
+    """Envía el remito (template + datos del body) a la impresora indicada."""
+    try:
+        item = body.to_queue_item()
+        pdf_bytes = service.render(item)
+        job_id = print_pdf_to_printer(printer_name, pdf_bytes, job_title="Remito")
+        return {"printer": printer_name, "job_id": job_id}
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/templates/label/test",
+    tags=["Templates"],
     summary="Probar template etiqueta (ZPL)",
     description="Genera ZPL de etiqueta con datos mock. Body: channel=3, location, opcional extra_data. Si format=json devuelve JSON con content_base64 para inspeccionar.",
     response_class=Response,

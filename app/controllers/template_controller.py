@@ -14,7 +14,11 @@ class TemplateController:
         """Genera PDF de remito para el body de prueba."""
         item = body.to_queue_item()
         pdf_bytes = service.render(item)
-        return Response(content=pdf_bytes, media_type="application/pdf")
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="remito.pdf"'},
+        )
 
     @staticmethod
     def render_label_test(service: LabelTemplateService, body: TemplateTestItem) -> Response:

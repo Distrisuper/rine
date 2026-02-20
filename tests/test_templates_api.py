@@ -17,7 +17,7 @@ class TestTemplatesRemitoAPI(unittest.TestCase):
             "client_name": "Cliente SA",
             "extra_data": '{"idRemito": "R-001", "label_city": "Mar del Plata", "label_address": "Av. 1 123"}',
         }
-        response = self.client.post("/queue/templates/remito/test", json=body)
+        response = self.client.post("/templates/remito/test", json=body)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers.get("content-type"), "application/pdf")
         self.assertGreater(len(response.content), 0)
@@ -26,7 +26,7 @@ class TestTemplatesRemitoAPI(unittest.TestCase):
     def test_remito_test_format_json_returns_base64(self):
         body = {"channel": 4, "location": "MDP", "ds": "remito"}
         response = self.client.post(
-            "/queue/templates/remito/test", json=body, params={"format": "json"}
+            "/templates/remito/test", json=body, params={"format": "json"}
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -38,7 +38,7 @@ class TestTemplatesRemitoAPI(unittest.TestCase):
 
     def test_remito_test_invalid_channel_returns_400(self):
         body = {"channel": 1, "location": "MDP"}
-        response = self.client.post("/queue/templates/remito/test", json=body)
+        response = self.client.post("/templates/remito/test", json=body)
         self.assertEqual(response.status_code, 400)
 
 
@@ -52,7 +52,7 @@ class TestTemplatesLabelAPI(unittest.TestCase):
             "location": "MDP",
             "extra_data": '{"label_to": "Juan", "label_address": "Calle 50", "label_city": "MDP"}',
         }
-        response = self.client.post("/queue/templates/label/test", json=body)
+        response = self.client.post("/templates/label/test", json=body)
         self.assertEqual(response.status_code, 200)
         self.assertIn("zpl", response.headers.get("content-type", ""))
         self.assertGreater(len(response.content), 0)
@@ -62,7 +62,7 @@ class TestTemplatesLabelAPI(unittest.TestCase):
     def test_label_test_format_json_returns_preview(self):
         body = {"channel": 3, "location": "MDP"}
         response = self.client.post(
-            "/queue/templates/label/test", json=body, params={"format": "json"}
+            "/templates/label/test", json=body, params={"format": "json"}
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -71,7 +71,7 @@ class TestTemplatesLabelAPI(unittest.TestCase):
 
     def test_label_test_invalid_channel_returns_400(self):
         body = {"channel": 4, "location": "MDP"}
-        response = self.client.post("/queue/templates/label/test", json=body)
+        response = self.client.post("/templates/label/test", json=body)
         self.assertEqual(response.status_code, 400)
 
 

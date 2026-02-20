@@ -14,12 +14,23 @@ def _data_to_context(data: RemitoRenderData) -> dict:
     """Convierte RemitoRenderData a dict para Jinja2."""
     return {
         "client_name": data.client_name,
+        "client_code": data.client_code,
         "order_number": data.order_number,
         "address": data.address,
         "city": data.city,
         "items": data.items,
         "total": data.total,
         "remito_id": data.remito_id,
+        "fecha": data.fecha,
+        "reparto": data.reparto,
+        "sucursal": data.sucursal,
+        "obs": data.obs,
+        "cant_unidades": data.cant_unidades,
+        "valor_declarado": data.valor_declarado,
+        "numero_cot": data.numero_cot,
+        "numero_cai": data.numero_cai,
+        "vencimiento": data.vencimiento,
+        "disclaimer": data.disclaimer,
     }
 
 

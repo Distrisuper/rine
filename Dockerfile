@@ -9,7 +9,7 @@ RUN apt-get update \
 		libcups2-dev \
 		libpango-1.0-0 \
 		libpangoft2-1.0-0 \
-		libgdk-pixbuf2.0-0 \
+		libgdk-pixbuf-2.0-0 \
 		libffi-dev \
 		shared-mime-info \
 		libcairo2 \
