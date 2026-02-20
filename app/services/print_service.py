@@ -16,8 +16,6 @@ class PrintService:
             return await self._print_gm_request(request)
         elif print_type == "PEND":
             return await self._print_pending_redi(request)
-        else:
-            raise ValueError(f"Tipo de impresión inválido: {request.type}")
 
     async def _print_label(self, request: PrintRequest) -> PrintResponse:
         """Procesa solicitud de impresión de etiqueta."""
