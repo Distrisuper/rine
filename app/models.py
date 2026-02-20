@@ -93,7 +93,7 @@ class PrintRequest(BaseModel):
         None,
         description="Cantidad de paquetes (requerido para ETIQ, PEND)",
         examples=[5],
-        ge=0
+        ge=1
     )
     label_packages: Optional[int] = Field(
         None,
