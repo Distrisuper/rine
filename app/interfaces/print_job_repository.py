@@ -20,5 +20,5 @@ class PrintJobRepository(ABC):
         print_count: int,
         payload: str,
     ) -> PrintJobRecord:
-        """Encola un trabajo de impresion."""
+        """Encola un trabajo de impresión."""
         raise NotImplementedError
