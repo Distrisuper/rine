@@ -97,7 +97,7 @@ class PrintRequest(BaseModel):
     )
     label_packages: Optional[int] = Field(
         None,
-        description="Cantidad de etiquetas (requerido para ETIQ)",
+        description="Cantidad de etiquetas (requerido para ETIQ, REMI)",
         examples=[1],
         ge=0
     )
