@@ -2,6 +2,7 @@
 Render de remito desde template HTML (Jinja2) + CSS → PDF con WeasyPrint.
 El formato se edita en app/templates/remitos/base_remito.html y remito.css.
 """
+import base64
 from io import BytesIO
 from pathlib import Path
 
@@ -10,10 +11,31 @@ from weasyprint import HTML
 
 from app.interfaces.remito_renderer import RemitoRenderer
 from app.models import RemitoRenderData
+from app.services.barcode_service import code39_svg_data_url
+
+
+def _logo_data_url(templates_dir: Path) -> str | None:
+    """
+    Si existe logo.png o logo.svg en la carpeta de templates, lo lee y devuelve
+    un data URL (base64) para el <img>. Así WeasyPrint lo carga siempre (también en Docker).
+    """
+    for name in ("logo.png", "logo.svg"):
+        path = templates_dir / name
+        if not path.exists():
+            continue
+        try:
+            raw = path.read_bytes()
+            mime = "image/png" if name.endswith(".png") else "image/svg+xml"
+            b64 = base64.b64encode(raw).decode("ascii")
+            return f"data:{mime};base64,{b64}"
+        except Exception:
+            continue
+    return None
 
 
 def _data_to_context(data: RemitoRenderData) -> dict:
     """Convierte RemitoRenderData a dict para Jinja2."""
+    remito_id = data.remito_id or ""
     return {
         "client_name": data.client_name,
         "client_code": data.client_code,
@@ -22,7 +44,8 @@ def _data_to_context(data: RemitoRenderData) -> dict:
         "city": data.city,
         "items": data.items,
         "total": data.total,
-        "remito_id": data.remito_id,
+        "remito_id": remito_id,
+        "barcode_data_url": code39_svg_data_url(remito_id),
         "fecha": data.fecha,
         "reparto": data.reparto,
         "sucursal": data.sucursal,
@@ -62,7 +85,9 @@ class HtmlRemitoRenderer(RemitoRenderer):
 
     def render(self, template_id: str, data: RemitoRenderData) -> bytes:
         template = self._env.get_template(self._template_name(template_id))
-        html_string = template.render(**_data_to_context(data))
+        context = _data_to_context(data)
+        context["logo_data_url"] = _logo_data_url(self._templates_dir)
+        html_string = template.render(**context)
 
         base_url = self._templates_dir.as_uri() + "/"
         pdf_doc = HTML(string=html_string, base_url=base_url)
