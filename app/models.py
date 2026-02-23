@@ -1,5 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from __future__ import annotations
+
+import json
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ValidationError
+
 
 class QueueItem(BaseModel):
     """Ítem en la cola de impresión."""
@@ -30,6 +35,8 @@ class QueueItem(BaseModel):
     date_started: Optional[str] = None
     date_processed: Optional[str] = None
     extra_data: Optional[str] = None
+    server: Optional[str] = None
+    ds: Optional[str] = None
 
 
 class PrintQueueResponse(BaseModel):
@@ -38,91 +45,124 @@ class PrintQueueResponse(BaseModel):
     ok: int
     data: list[QueueItem]
 
-class PrintRequest(BaseModel):
+
+class ExtraDataRemito(BaseModel):
     """
-    Solicitud unificada para impresión.
-
-    ## Tipos de impresión y campos requeridos:
-
-    ### ETIQ (Etiqueta)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, client_address, client_city, package_quantity, label_packages
-
-    ### REMI (Remito)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, client_address, client_city, location, remitos_quantity
-
-    ### GM (Pedido de impresión)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, location, invoices_quantity
-
-    ### PEND (Redi pendiente)
-    - **Obligatorios**: type, client_code, client_name, set_host, redi_code, id_remito, location, package_quantity, pending
+    Datos extra del ítem de cola (remito/etiqueta).
+    Equivalente a dataRemito del legacy C#; se parsea desde QueueItem.extra_data.
     """
 
-    type: Literal["ETIQ", "REMI", "GM", "PEND"] = Field(
-        ...,
-        description="Tipo de comprobante a imprimir",
-        examples=["ETIQ"]
-    )
-    client_code: str = Field(..., description="Código del cliente", examples=["06689"])
-    client_name: str = Field(..., description="Nombre del cliente", examples=["Sergio Palomo"])
-    set_host: int = Field(..., description="Identificador del host", examples=[301])
-    redi_code: str = Field(..., description="Código REDI", examples=["[R5-12345]__"])
-    id_remito: str = Field(..., description="ID del remito", examples=["685110"])
+    remito: Optional[str] = None
+    ftp_filename: Optional[str] = None
+    label_to: Optional[str] = None
+    label_address: Optional[str] = None
+    label_city: Optional[str] = None
+    label_packages: Optional[str] = None
+    label_transport: Optional[str] = None
+    idRemito: Optional[str] = None
+    redi_id: Optional[str] = None
 
-    # Campos opcionales según tipo
-    client_address: Optional[str] = Field(
-        None,
-        description="Dirección del cliente (requerido para ETIQ, REMI)",
-        examples=["Calle Principal 123"]
-    )
-    client_city: Optional[str] = Field(
-        None,
-        description="Ciudad del cliente (requerido para ETIQ, REMI)",
-        examples=["Buenos Aires"]
-    )
-    location: Optional[str] = Field(
-        None,
-        description="Ubicación/sucursal (requerido para REMI, GM, PEND)",
-        examples=["BA"]
-    )
-    transport_description: Optional[str] = Field(
-        None,
-        description="Descripción del transporte (opcional)",
-        examples=["El Rapido S.A."]
-    )
-    package_quantity: Optional[int] = Field(
-        None,
-        description="Cantidad de paquetes (requerido para ETIQ, PEND)",
-        examples=[5],
-        ge=1
-    )
-    label_packages: Optional[int] = Field(
-        None,
-        description="Cantidad de etiquetas (requerido para ETIQ, REMI)",
-        examples=[1],
-        ge=1
-    )
-    remitos_quantity: Optional[int] = Field(
-        None,
-        description="Cantidad de remitos (requerido para REMI)",
-        examples=[3],
-        ge=1
-    )
-    invoices_quantity: Optional[int] = Field(
-        None,
-        description="Cantidad de comprobantes (requerido para GM)",
-        examples=[1],
-        ge=1
-    )
-    pending: Optional[bool] = Field(
-        None,
-        description="Indica si el remito es pendiente (True) o no (False) (requerido para PEND)",
-        examples=[True],
-    )
+    @classmethod
+    def from_json(cls, raw: str | None) -> ExtraDataRemito | None:
+        """Parsea el JSON de extra_data; devuelve None si está vacío o es inválido."""
+        if not raw or not raw.strip():
+            return None
+        try:
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                return None
+            return cls.model_validate(data)
+        except (json.JSONDecodeError, ValidationError):
+            return None
 
 
-class PrintResponse(BaseModel):
-    """Respuesta genérica de impresión."""
+class ResolvedTemplate(BaseModel):
+    """Resultado del resolver: template a usar y tipo de salida."""
 
-    ok: int
-    message: str
-    doc_type: str
+    template_id: str
+    output_type: Literal["pdf", "zpl"]
+
+
+class RemitoRenderData(BaseModel):
+    """Datos completos para renderizar un remito (PDF). Diseño tipo Distrisuper."""
+
+    client_name: str = ""
+    client_code: str = ""
+    order_number: str = ""
+    address: str = ""
+    city: str = ""
+    items: list[dict] = []
+    total: float = 0.0
+    remito_id: str = ""
+    fecha: str = ""
+    reparto: str = ""
+    sucursal: str = ""
+    obs: str = ""
+    cant_unidades: str = ""
+    valor_declarado: str = ""
+    numero_cot: str = ""
+    numero_cai: str = ""
+    vencimiento: str = ""
+    disclaimer: str = ""
+
+
+class LabelRenderData(BaseModel):
+    """Datos para renderizar una etiqueta/rótulo (ZPL)."""
+
+    to: str = ""
+    address: str = ""
+    city: str = ""
+    packages: str = ""
+    transport: str = ""
+    observations: str = ""
+
+
+class TemplateTestItem(BaseModel):
+    """
+    Body mínimo para probar templates (remito/etiqueta).
+    Los campos no enviados se rellenan con valores por defecto.
+    """
+
+    channel: int
+    location: str = ""
+    extra_data: Optional[str] = None
+    client_code: str = ""
+    client_name: str = "Cliente prueba"
+    order_number: int = 1
+    invoice_total: Optional[float] = None
+    redi_id: int = 0
+    server: Optional[str] = None
+    ds: Optional[str] = None
+
+    def to_queue_item(self) -> QueueItem:
+        """Construye un QueueItem para el servicio de templates."""
+        return QueueItem(
+            id=0,
+            client_id="test",
+            client_code=self.client_code,
+            client_name=self.client_name,
+            order_number=self.order_number,
+            type="remito" if self.channel in (4, 8) else "etiqueta",
+            type_code=None,
+            location=self.location,
+            channel=self.channel,
+            invoice_type=None,
+            invoice_number=None,
+            invoice_comment="",
+            invoice_total=self.invoice_total,
+            result=0,
+            result_detail="",
+            retry=0,
+            priority=0,
+            printed=0,
+            print_count=1,
+            host=0,
+            redi_code="",
+            redi_id=self.redi_id,
+            date_created="",
+            date_started=None,
+            date_processed=None,
+            extra_data=self.extra_data,
+            server=self.server,
+            ds=self.ds,
+        )

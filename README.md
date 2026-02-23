@@ -152,5 +152,60 @@ Conexión por USB. CUPS no autodetecta: hay que agregar la impresora una vez en 
    sudo lpadmin -p PC42t -E -v usb://Honeywell/PC42t -m raw
    ```
 4. Comprobar: `lpstat -p -d` y luego `GET /printers/status` en la API; debe aparecer `PC42t` con su estado.
-Administrador de servicios de impresión para gestionar la cola de impresión y orquestar la comunicación con el spooler y dispositivos de impresión, recibiendo datos desde la nube y gestionando de manera centralizada por sucursal las impresiones.
+
+### Probar impresión en la Raspberry (impresora láser)
+
+Cuando la API esté montada en la Pi y la impresora láser esté dada de alta en CUPS:
+
+**1. Ver que la impresora exista en CUPS**
+
+En la Pi:
+```bash
+lpstat -p -d
+```
+
+O desde la API (desde la Pi o desde otra máquina apuntando a la Pi):
+```bash
+curl http://<IP_DE_LA_PI>:8000/printers/status
+```
+El **nombre exacto** de la cola (ej. `LaserOficina`, `HP-LaserJet`) es el que se usa en el paso 3.
+
+**2. Dar de alta la láser en CUPS (si aún no está)**
+
+Con la impresora encendida y conectada (USB o red):
+```bash
+# Impresora por red (reemplazá IP o hostname)
+sudo lpadmin -p LaserOficina -E -v socket://192.168.1.50:9100 -m everywhere
+
+# O por USB (primero buscá el URI)
+lpinfo -v | grep -i usb
+sudo lpadmin -p LaserOficina -E -v usb://HP/LaserJet... -m everywhere
+```
+Comprobar con `lpstat -p -d` o con `GET /printers/status`.
+
+**3. Enviar un remito a esa impresora**
+
+Desde la Raspberry:
+```bash
+curl -X POST "http://localhost:8000/printers/LaserOficina/print/remito" \
+  -H "Content-Type: application/json" \
+  -d '{"channel":4,"location":"MDP","ds":"remito","client_code":"05451","client_name":"REPUESJOR SRL"}'
+```
+Reemplazá `LaserOficina` por el nombre que devuelve `GET /printers/status`. Si la API está en otra IP:
+```bash
+curl -X POST "http://<IP_DE_LA_PI>:8000/printers/LaserOficina/print/remito" \
+  -H "Content-Type: application/json" \
+  -d '{"channel":4,"location":"MDP","ds":"remito","client_code":"05451","client_name":"REPUESJOR SRL"}'
+```
+Respuesta esperada: `{"printer":"LaserOficina","job_id":123}`.
+
+**4. Desde Swagger**
+
+En `http://<IP_DE_LA_PI>:8000/docs` → **POST** `/printers/{printer_name}/print/remito` (sección Printers). "Try it out", poné el nombre de la cola en `printer_name` y el mismo JSON en el body.
+
+**Si algo falla**
+
+- **503 "CUPS no disponible"**: el usuario que corre la API no tiene acceso a CUPS. En la Pi: `sudo systemctl status cups` y que el usuario esté en el grupo `lp`.
+- **400 "Impresora 'X' no existe"**: el nombre no coincide con ninguna cola; usá el nombre exacto de `GET /printers/status`.
+- **200 pero no imprime**: el trabajo está en la cola; revisar `lpstat -o` o la cola en CUPS; si la impresora está pausada, habilitarla en CUPS.
 
