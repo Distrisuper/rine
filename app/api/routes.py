@@ -28,6 +28,8 @@ from app.services.remito_template_service import RemitoTemplateService
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+logger = logging.getLogger(__name__)
+
 
 def get_printer_discovery() -> PrinterDiscovery:
     """Dependencia: implementación por defecto (CUPS o mock)."""
