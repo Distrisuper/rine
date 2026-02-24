@@ -9,7 +9,9 @@ from infrastructure.adapters.httpx_client import HttpxClient
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.hello.health_controller import HealthController
-from application.use_cases.queue_controller import QueueController
+from infrastructure.controllers.queue.get_next_controller import GetNextController
+from application.use_cases.queue.get_next.get_next_use_case_interface import GetNextUseCaseInterface
+from application.use_cases.queue.get_next.get_next_use_case import GetNextUseCase
 from application.use_cases.template_controller import TemplateController
 from domain.repositories.printer_discovery import PrinterDiscovery
 from domain.entities.models import PrintQueueResponse, TemplateTestItem
@@ -68,6 +70,14 @@ def get_one_status_by_name_controller() -> GetOneStatusByNameController:
     return GetOneStatusByNameController(use_case)
 
 
+def get_next_controller() -> GetNextController:
+    settings = get_settings()
+    http_client = HttpxClient()
+    queue_service = QueueService(http_client, settings)
+    use_case = GetNextUseCase(queue_service)
+    return GetNextController(use_case)
+
+
 def get_remito_template_service() -> RemitoTemplateService:
     """Servicio de remito: HTML+WeasyPrint si está disponible, sino placeholder PDF."""
     try:
@@ -118,12 +128,10 @@ async def health(controller: HealthController = Depends(get_health_controller)):
 async def queue_next(
     limit: int = Query(1, ge=1, le=100, description="Cantidad máxima de registros a pedir."),
     host: int = Query(..., description="Identificador del host que solicita la factura."),
+    controller: GetNextController = Depends(get_next_controller),
 ) -> PrintQueueResponse:
     try:
-        settings = get_settings()
-        http_client = HttpxClient()
-        service = QueueService(http_client, settings)
-        return await QueueController.get_next(service, limit, host)
+        return await controller(limit, host)
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
