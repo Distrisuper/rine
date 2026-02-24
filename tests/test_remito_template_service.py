@@ -2,8 +2,8 @@
 import unittest
 from unittest.mock import MagicMock
 
-from app.models import ExtraDataRemito, QueueItem, RemitoRenderData, ResolvedTemplate
-from app.services.remito_template_service import RemitoTemplateService
+from domain.entities.models import ExtraDataRemito, QueueItem, RemitoRenderData, ResolvedTemplate
+from domain.services.remito_template_service import RemitoTemplateService
 
 
 def _remito_item(channel=4, location="MDP", extra_data=None):

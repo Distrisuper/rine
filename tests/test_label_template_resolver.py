@@ -1,6 +1,6 @@
 """Tests del resolver de template de etiqueta (channel 3)."""
 import unittest
-from app.services.label_template_resolver import LegacyLabelTemplateResolver
+from domain.services.label_template_resolver import LegacyLabelTemplateResolver
 
 
 class TestLegacyLabelTemplateResolver(unittest.TestCase):

@@ -1,0 +1,15 @@
+from infrastructure.presentation.api.routes import router
+from fastapi import FastAPI
+
+app = FastAPI(
+    title="RINE Print Manager API",
+    description="API para cola de impresión, templates (remito PDF, etiqueta ZPL) y monitoreo de impresoras vía CUPS.",
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "Health", "description": "Raíz y estado del servicio"},
+        {"name": "Queue", "description": "Cola de impresión (siguiente ítem)"},
+        {"name": "Printers", "description": "Estado de impresoras (CUPS) y envío de trabajos"},
+        {"name": "Templates", "description": "Prueba de templates remito (PDF) y etiqueta (ZPL)"},
+    ],
+)
+app.include_router(router)

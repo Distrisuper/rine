@@ -2,8 +2,8 @@
 import unittest
 from unittest.mock import MagicMock
 
-from app.models import ExtraDataRemito, LabelRenderData, QueueItem, ResolvedTemplate
-from app.services.label_template_service import LabelTemplateService
+from domain.entities.models import ExtraDataRemito, LabelRenderData, QueueItem, ResolvedTemplate
+from domain.services.label_template_service import LabelTemplateService
 
 
 def _label_item(channel: int = 3, location: str = "MDP", extra_data: str | None = None):

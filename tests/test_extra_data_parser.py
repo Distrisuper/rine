@@ -1,7 +1,7 @@
 """Tests del parser de extra_data y del modelo ExtraDataRemito."""
 import unittest
-from app.models import ExtraDataRemito
-from app.services.extra_data_parser import DefaultExtraDataParser
+from domain.entities.models import ExtraDataRemito
+from domain.services.extra_data_parser import DefaultExtraDataParser
 
 
 class TestExtraDataRemitoFromJson(unittest.TestCase):

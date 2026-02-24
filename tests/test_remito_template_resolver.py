@@ -1,6 +1,6 @@
 """Tests del resolver de template de remito (reglas legacy)."""
 import unittest
-from app.services.remito_template_resolver import LegacyRemitoTemplateResolver
+from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
 
 
 class TestLegacyRemitoTemplateResolver(unittest.TestCase):
