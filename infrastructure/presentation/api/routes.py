@@ -9,7 +9,6 @@ from infrastructure.adapters.httpx_client import HttpxClient
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.hello.health_controller import HealthController
-from application.use_cases.printer_controller import PrinterController
 from application.use_cases.queue_controller import QueueController
 from application.use_cases.template_controller import TemplateController
 from domain.repositories.printer_discovery import PrinterDiscovery
@@ -29,6 +28,12 @@ from application.use_cases.hello.get.get_hello_use_case_interface import GetHell
 from application.use_cases.hello.get.get_hello_use_case import GetHelloUseCase
 from application.use_cases.hello.health.health_use_case_interface import HealthUseCaseInterface
 from application.use_cases.hello.health.health_use_case import HealthUseCase
+from application.use_cases.printer.get_status.get_status_use_case_interface import GetStatusUseCaseInterface
+from application.use_cases.printer.get_status.get_status_use_case import GetStatusUseCase
+from infrastructure.controllers.printer.get_status_controller import GetStatusController
+from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
+from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
+from infrastructure.controllers.printer.get_one_status_by_name_controller import GetOneStatusByNameController
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,6 +54,18 @@ def get_health_controller() -> HealthController:
 def get_printer_discovery() -> PrinterDiscovery:
     """Dependencia: implementación por defecto (CUPS o mock)."""
     return CupsPrinterDiscovery()
+
+
+def get_status_controller() -> GetStatusController:
+    discovery = get_printer_discovery()
+    use_case = GetStatusUseCase(discovery)
+    return GetStatusController(use_case)
+
+
+def get_one_status_by_name_controller() -> GetOneStatusByNameController:
+    discovery = get_printer_discovery()
+    use_case = GetOneStatusByNameUseCase(discovery)
+    return GetOneStatusByNameController(use_case)
 
 
 def get_remito_template_service() -> RemitoTemplateService:
@@ -117,8 +134,8 @@ async def queue_next(
     summary="Estado de la flota de impresoras",
     description="Lista todas las impresoras detectadas por CUPS con ready/not_ready y detalles. En Windows devuelve _cups_unavailable.",
 )
-async def printers_status(discovery: PrinterDiscovery = Depends(get_printer_discovery)):
-    return PrinterController.get_status(discovery)
+async def printers_status(controller: GetStatusController = Depends(get_status_controller)):
+    return controller()
 
 
 @router.get(
@@ -127,8 +144,8 @@ async def printers_status(discovery: PrinterDiscovery = Depends(get_printer_disc
     summary="Estado de una impresora",
     description="Estado de la impresora por nombre. 404 si no existe o CUPS no disponible.",
 )
-async def printer_status(name: str, discovery: PrinterDiscovery = Depends(get_printer_discovery)):
-    data = PrinterController.get_printer_status(discovery, name)
+async def printer_status(name: str, controller: GetOneStatusByNameController = Depends(get_one_status_by_name_controller)):
+    data = controller(name)
     if data is None:
         raise HTTPException(status_code=404, detail="Impresora no encontrada o CUPS no disponible")
     return data
