@@ -4,6 +4,7 @@ El formato del PDF se define editando estos archivos.
 
 ## Archivos
 
+- **`logo.png`** o **`logo.svg`** (opcional) — Logo de la empresa. Si colocás uno de estos archivos en esta carpeta, el remito lo muestra en la cabecera en lugar del placeholder "D". Preferí PNG con fondo transparente o SVG; altura recomendada ~50 px para que escale bien.
 - **`base_remito.html`** — Estructura y contenido. Variables Jinja2:
   - `remito_id`, `client_name`, `order_number`, `address`, `city`
   - `items` (lista de dicts con `codigo`, `descripcion`, `cantidad`, `precio`, `subtotal`)

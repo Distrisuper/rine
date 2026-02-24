@@ -10,6 +10,7 @@
     .header-left { display: table-cell; width: 55%; vertical-align: top; }
     .header-right { display: table-cell; width: 45%; vertical-align: top; text-align: right; }
     .logo-d { display: inline-block; width: 42px; height: 52px; line-height: 52px; text-align: center; font-size: 36px; font-weight: bold; border: 2px solid #000; margin-right: 8px; vertical-align: middle; }
+    .logo-img { max-height: 52px; width: auto; margin-right: 10px; vertical-align: middle; display: inline-block; }
     .company-name { font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
     .company-tagline { font-size: 12px; font-weight: bold; margin-top: 2px; }
     .company-line2 { font-size: 10px; margin-top: 1px; }
@@ -33,16 +34,24 @@
     .footer-left { display: table-cell; width: 50%; vertical-align: top; }
     .footer-right { display: table-cell; width: 50%; vertical-align: top; text-align: right; }
     .footer-wrap .line { margin-bottom: 2px; }
+    .barcode-wrap { margin-top: 8px; }
+    .barcode-wrap img { max-width: 320px; max-height: 70px; display: block; }
   </style>
 </head>
 <body>
   <div class="header-wrap">
     <div class="header-left">
       <div>
+        {% if logo_data_url %}
+        <img src="{{ logo_data_url }}" alt="DISTRISUPER" class="logo-img" />
+        {% else %}
         <span class="logo-d">D</span>
         <span class="company-name">DISTRISUPER</span>
+        {% endif %}
       </div>
+      {% if not logo_data_url %}
       <div class="company-tagline">AUTOMOTOR</div>
+      {% endif %}
       <div class="company-line2">de Distrisuper S.R.L</div>
       <div class="company-contact">
         pedidosmdp@distrisuper.com<br />
@@ -55,6 +64,11 @@
         <span class="remito-r-box">R</span>
         <span class="remito-num">Remito Nº <span class="num">{{ remito_id or '—' }}</span></span>
       </div>
+      {% if barcode_data_url %}
+      <div class="barcode-wrap">
+        <img src="{{ barcode_data_url }}" alt="Code 39: {{ remito_id }}" class="barcode-img" />
+      </div>
+      {% endif %}
       <div class="company-fiscal">
         CUIT: 30-60924920-6<br />
         Ing Brutos: 911-440096-1<br />
