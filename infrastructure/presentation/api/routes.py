@@ -12,7 +12,8 @@ from infrastructure.controllers.hello.health_controller import HealthController
 from infrastructure.controllers.queue.get_next_controller import GetNextController
 from application.use_cases.queue.get_next.get_next_use_case_interface import GetNextUseCaseInterface
 from application.use_cases.queue.get_next.get_next_use_case import GetNextUseCase
-from application.use_cases.template_controller import TemplateController
+from infrastructure.controllers.template.render_remito_controller import RenderRemitoController
+from infrastructure.controllers.template.render_label_controller import RenderLabelController
 from domain.repositories.printer_discovery import PrinterDiscovery
 from domain.entities.models import PrintQueueResponse, TemplateTestItem
 from domain.services.extra_data_parser import DefaultExtraDataParser
@@ -36,6 +37,10 @@ from infrastructure.controllers.printer.get_status_controller import GetStatusCo
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
 from infrastructure.controllers.printer.get_one_status_by_name_controller import GetOneStatusByNameController
+from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
+from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
+from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
+from application.use_cases.template.render_label.render_label_use_case import RenderLabelUseCase
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -108,6 +113,18 @@ def get_label_template_service() -> LabelTemplateService:
     )
 
 
+def get_render_remito_controller() -> RenderRemitoController:
+    template_service = get_remito_template_service()
+    use_case = RenderRemitoUseCase(template_service)
+    return RenderRemitoController(use_case)
+
+
+def get_render_label_controller() -> RenderLabelController:
+    template_service = get_label_template_service()
+    use_case = RenderLabelUseCase(template_service)
+    return RenderLabelController(use_case)
+
+
 @router.get("/", tags=["Health"])
 async def root(controller: HelloGetController = Depends(get_hello_controller)):
     return controller()
@@ -168,11 +185,11 @@ async def printer_status(name: str, controller: GetOneStatusByNameController = D
 )
 async def template_remito_test(
     body: TemplateTestItem,
-    service: RemitoTemplateService = Depends(get_remito_template_service),
+    controller: RenderRemitoController = Depends(get_render_remito_controller),
     format: str = Query("binary", description="binary (PDF) o json (base64 para debug)"),
 ):
     try:
-        response = TemplateController.render_remito_test(service, body)
+        response = controller(body)
         if format == "json":
             return JSONResponse(content={
                 "content_type": "application/pdf",
@@ -219,11 +236,11 @@ async def print_remito_to_printer(
 )
 async def template_label_test(
     body: TemplateTestItem,
-    service: LabelTemplateService = Depends(get_label_template_service),
+    controller: RenderLabelController = Depends(get_render_label_controller),
     format: str = Query("binary", description="binary (ZPL) o json (base64 para debug)"),
 ):
     try:
-        response = TemplateController.render_label_test(service, body)
+        response = controller(body)
         if format == "json":
             return JSONResponse(content={
                 "content_type": "application/vnd.zpl",
