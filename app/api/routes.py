@@ -18,7 +18,7 @@ from app.services.label_data_provider import InlineLabelDataProvider
 from app.services.label_render_service import PlaceholderLabelRenderer
 from app.services.label_template_resolver import LegacyLabelTemplateResolver
 from app.services.label_template_service import LabelTemplateService
-from app.services.print_job_service import print_pdf_to_printer
+from app.services.print_job_service import print_pdf_to_printer, print_raw_to_printer
 from app.services.queue_service import QueueService
 from app.services.remito_data_provider import InlineRemitoDataProvider
 from app.services.remito_render_service import PlaceholderRemitoRenderer
@@ -163,6 +163,29 @@ async def print_remito_to_printer(
         item = body.to_queue_item()
         pdf_bytes = service.render(item)
         job_id = print_pdf_to_printer(printer_name, pdf_bytes, job_title="Remito")
+        return {"printer": printer_name, "job_id": job_id}
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/printers/{printer_name}/print/label",
+    tags=["Printers"],
+    summary="Imprimir etiqueta (ZPL) en una impresora (CUPS)",
+    description="Genera el ZPL de la etiqueta con el body indicado (channel=3) y envía el trabajo a la impresora por nombre. Para Zebra/etiquetas la cola en CUPS debe ser raw (-m raw). Solo Linux con CUPS; en Windows responde 503.",
+)
+async def print_label_to_printer(
+    printer_name: str,
+    body: TemplateTestItem,
+    service: LabelTemplateService = Depends(get_label_template_service),
+):
+    """Envía la etiqueta (template + datos del body) a la impresora indicada como ZPL raw."""
+    try:
+        item = body.to_queue_item()
+        zpl_bytes = service.render(item)
+        job_id = print_raw_to_printer(printer_name, zpl_bytes, job_title="Etiqueta", suffix=".zpl")
         return {"printer": printer_name, "job_id": job_id}
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))

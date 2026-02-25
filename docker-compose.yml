@@ -20,6 +20,8 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+  
     restart: always
 
 volumes:
