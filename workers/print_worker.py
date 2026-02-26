@@ -51,7 +51,7 @@ class PrintWorker:
 
                 content = job.render()
 
-                self._send_to_printer(printer.name, content, printer.printer_type)
+                self._send_to_printer(printer.name, content)
 
                 job.status = "printed"
                 job.date_processed = datetime.utcnow()
@@ -89,8 +89,8 @@ class PrintWorker:
 
         return job
 
-    def _send_to_printer(self, printer_name: str, content: bytes, printer_type: str):
-        logger.info(f"Enviando a {printer_name} (type={printer_type})")
+    def _send_to_printer(self, printer_name: str, content: bytes):
+        logger.info(f"Enviando a {printer_name}")
         # TODO: Implementar con pycups o similar
         # Por ahora simulamos éxito
         logger.info(f"Simulando envío completado")

@@ -102,13 +102,11 @@ class ChannelUpdate(BaseModel):
 
 class PrinterCreate(BaseModel):
     name: str
-    printer_type: str
     channel_ids: List[int] = []
 
 
 class PrinterUpdate(BaseModel):
     name: Optional[str] = None
-    printer_type: Optional[str] = None
     is_active: Optional[bool] = None
     channel_ids: Optional[List[int]] = None
 
@@ -338,7 +336,7 @@ async def create_printer(
     body: PrinterCreate,
     repo: PrinterRepository = Depends(get_printer_repository),
 ):
-    return repo.create_printer(body.name, body.printer_type, body.channel_ids or [])
+    return repo.create_printer(body.name, body.channel_ids or [])
 
 
 @router.put(
@@ -355,7 +353,6 @@ async def update_printer(
     printer = repo.update_printer(
         printer_id,
         name=body.name,
-        printer_type=body.printer_type,
         is_active=body.is_active,
     )
     if not printer:

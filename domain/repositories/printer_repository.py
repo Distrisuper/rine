@@ -29,15 +29,14 @@ class PrinterRepository:
         with Session(self.engine) as session:
             return session.get(Printer, printer_id)
 
-    def create_printer(self, name: str, printer_type: str, channel_ids: list[int] = None) -> dict:
+    def create_printer(self, name: str, channel_ids: list[int] = None) -> dict:
         with Session(self.engine) as session:
-            printer = Printer(name=name, printer_type=printer_type)
+            printer = Printer(name=name)
             session.add(printer)
             session.commit()
             session.refresh(printer)
             printer_id = printer.id
             printer_name = printer.name
-            printer_type_val = printer.printer_type
             
             if channel_ids:
                 for ch_id in channel_ids:
@@ -55,11 +54,10 @@ class PrinterRepository:
             return {
                 "id": printer_id,
                 "name": printer_name,
-                "printer_type": printer_type_val,
                 "channels": self.get_printer_channels(printer_id),
             }
 
-    def update_printer(self, printer_id: int, name: str = None, printer_type: str = None, is_active: bool = None) -> Optional[dict]:
+    def update_printer(self, printer_id: int, name: str = None, is_active: bool = None) -> Optional[dict]:
         with Session(self.engine) as session:
             printer = session.get(Printer, printer_id)
             if not printer:
@@ -67,8 +65,6 @@ class PrinterRepository:
             
             if name is not None:
                 printer.name = name
-            if printer_type is not None:
-                printer.printer_type = printer_type
             if is_active is not None:
                 printer.is_active = is_active
             
@@ -77,7 +73,6 @@ class PrinterRepository:
             return {
                 "id": printer.id,
                 "name": printer.name,
-                "printer_type": printer.printer_type,
                 "is_active": printer.is_active,
                 "channels": self.get_printer_channels(printer_id),
             }
@@ -136,7 +131,6 @@ class PrinterRepository:
                 result.append({
                     "id": p.id,
                     "name": p.name,
-                    "printer_type": p.printer_type,
                     "is_active": p.is_active,
                     "channels": channels,
                     "channel_count": len(channels),
@@ -156,7 +150,6 @@ class PrinterRepository:
                 {
                     "printer_id": p.id,
                     "printer_name": p.name,
-                    "printer_type": p.printer_type,
                     "printer_is_active": p.is_active,
                     "channel": pc.channel,
                     "description": ch.description,

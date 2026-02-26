@@ -167,7 +167,6 @@ function renderPrinters(printers) {
         return `
             <tr class="${activeClass}">
                 <td><strong>${p.name}</strong></td>
-                <td>${formatPrinterType(p.printer_type)}</td>
                 <td>
                     <button onclick="showPrinterChannelsModal(${p.id}, '${p.name}', ${JSON.stringify(p.channels).replace(/"/g, '&quot;')})" class="btn-link">
                         ${channelText}
@@ -175,7 +174,7 @@ function renderPrinters(printers) {
                 </td>
                 <td><span class="status-badge ${activeClass}">${p.is_active ? 'Activa' : 'Inactiva'}</span></td>
                 <td>
-                    <button onclick="editPrinter(${p.id}, '${p.name}', '${p.printer_type}', ${p.is_active})" class="btn-edit">Editar</button>
+                    <button onclick="editPrinter(${p.id}, '${p.name}', ${p.is_active})" class="btn-edit">Editar</button>
                     <button onclick="deletePrinter(${p.id})" class="btn-delete">Eliminar</button>
                 </td>
             </tr>
@@ -183,52 +182,53 @@ function renderPrinters(printers) {
     }).join('');
 }
 
-function formatPrinterType(type) {
-    return type === 'zebra' ? 'Zebra (ZPL)' : 'Láser (PDF)';
-}
-
 // Printer Modal
 let discoveredPrinters = [];
 
-async function showPrinterModal(id = null, name = '', printerType = 'zebra', isActive = true) {
+async function showPrinterModal(id = null, name = '', isActive = true) {
     document.getElementById('printer-modal').style.display = 'flex';
     document.getElementById('printer-modal-title').textContent = id ? 'Editar Impresora' : 'Nueva Impresora';
     document.getElementById('printer-id').value = id || '';
     document.getElementById('printer-name').value = name || '';
-    document.getElementById('printer-type').value = printerType;
     document.getElementById('printer-active').checked = isActive;
     
-    // Fetch impresoras de CUPS
-    if (!id) {
-        try {
-            const response = await fetch(API_PRINTERS_DISCOVER);
-            discoveredPrinters = await response.json();
-            
-            const select = document.getElementById('printer-select');
-            select.innerHTML = '<option value="">Seleccionar impresora...</option>';
-            
-            if (discoveredPrinters.length === 0) {
-                select.innerHTML = '<option value="">No hay impresoras en CUPS</option>';
-            } else {
-                discoveredPrinters.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p.name;
-                    option.textContent = `${p.name} (${p.model}) - ${p.type}`;
-                    option.dataset.type = p.type;
-                    select.appendChild(option);
-                });
-            }
-            
-            select.addEventListener('change', (e) => {
-                const selected = discoveredPrinters.find(p => p.name === e.target.value);
-                if (selected) {
-                    document.getElementById('printer-name').value = selected.name;
-                    document.getElementById('printer-type').value = selected.type;
-                }
+    // Fetch impresoras de CUPS (siempre, tanto para crear como editar)
+    try {
+        const response = await fetch(API_PRINTERS_DISCOVER);
+        discoveredPrinters = await response.json();
+        
+        const select = document.getElementById('printer-select');
+        select.innerHTML = '<option value="">Seleccionar impresora...</option>';
+        
+        if (discoveredPrinters.length === 0) {
+            select.innerHTML = '<option value="">No hay impresoras en CUPS</option>';
+        } else {
+            discoveredPrinters.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.name;
+                option.textContent = `${p.name} (${p.model}) - ${p.type}`;
+                option.dataset.type = p.type;
+                select.appendChild(option);
             });
-        } catch (error) {
-            console.error('Error fetching printers:', error);
         }
+        
+        // Si hay nombre guardado (edición), seleccionar la que haga match
+        if (name) {
+            const match = discoveredPrinters.find(p => p.name === name);
+            if (match) {
+                select.value = name;
+            }
+        }
+        
+        // Listener para cambio de selección
+        select.onchange = (e) => {
+            const selected = discoveredPrinters.find(p => p.name === e.target.value);
+            if (selected) {
+                document.getElementById('printer-name').value = selected.name;
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching printers:', error);
     }
 }
 
@@ -237,8 +237,8 @@ function closePrinterModal() {
     document.getElementById('printer-form').reset();
 }
 
-function editPrinter(id, name, printerType, isActive) {
-    showPrinterModal(id, name, printerType, isActive);
+function editPrinter(id, name, isActive) {
+    showPrinterModal(id, name, isActive);
 }
 
 async function deletePrinter(id) {
@@ -256,12 +256,11 @@ document.getElementById('printer-form').addEventListener('submit', async (e) => 
     e.preventDefault();
     const id = document.getElementById('printer-id').value;
     const name = document.getElementById('printer-name').value;
-    const printerType = document.getElementById('printer-type').value;
     const isActive = document.getElementById('printer-active').checked;
     
     try {
         let response;
-        const body = { name, printer_type: printerType, is_active: isActive };
+        const body = { name, is_active: isActive };
         
         if (id) {
             response = await fetch(`${API_PRINTERS}/${id}`, {

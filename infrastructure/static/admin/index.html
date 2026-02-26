@@ -55,7 +55,6 @@
                 <thead>
                     <tr>
                         <th>Nombre</th>
-                        <th>Tipo</th>
                         <th>Channels</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -104,40 +103,13 @@
                 <input type="hidden" id="printer-id">
                 <div class="form-group">
                     <label>Impresora (de CUPS)</label>
-                    <select id="printer-select" required>
+                    <select id="printer-select">
                         <option value="">Seleccionar impresora...</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Nombre</label>
                     <input type="text" id="printer-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select id="printer-type" required>
-                        <option value="zebra">Zebra (ZPL)</option>
-                        <option value="laser">Láser (PDF)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="printer-active" checked>
-                        Activa
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="button" onclick="closePrinterModal()" class="btn-cancel">Cancelar</button>
-                    <button type="submit" class="btn-save">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select id="printer-type" required>
-                        <option value="zebra">Zebra (ZPL)</option>
-                        <option value="laser">Láser (PDF)</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label>
