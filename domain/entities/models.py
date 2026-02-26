@@ -39,13 +39,6 @@ class QueueItem(BaseModel):
     ds: Optional[str] = None
 
 
-class PrintQueueResponse(BaseModel):
-    """Respuesta del endpoint de cola de impresión."""
-
-    ok: int
-    data: list[QueueItem]
-
-
 class ExtraDataRemito(BaseModel):
     """
     Datos extra del ítem de cola (remito/etiqueta).

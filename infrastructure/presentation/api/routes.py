@@ -5,24 +5,19 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import JSONResponse, Response
 
 from infrastructure.adapters.cups_printer_discovery import CupsPrinterDiscovery
-from infrastructure.adapters.httpx_client import HttpxClient
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.hello.health_controller import HealthController
-from infrastructure.controllers.queue.get_next_controller import GetNextController
-from application.use_cases.queue.get_next.get_next_use_case_interface import GetNextUseCaseInterface
-from application.use_cases.queue.get_next.get_next_use_case import GetNextUseCase
 from infrastructure.controllers.template.render_remito_controller import RenderRemitoController
 from infrastructure.controllers.template.render_label_controller import RenderLabelController
 from domain.repositories.printer_discovery import PrinterDiscovery
-from domain.entities.models import PrintQueueResponse, TemplateTestItem
+from domain.entities.models import TemplateTestItem
 from infrastructure.services.extra_data_parser import DefaultExtraDataParser
 from domain.services.label_data_provider import InlineLabelDataProvider
 from domain.services.label_render_service import PlaceholderLabelRenderer
 from domain.services.label_template_resolver import LegacyLabelTemplateResolver
 from domain.services.label_template_service import LabelTemplateService
 from infrastructure.print_job_service import print_pdf_to_printer
-from infrastructure.services.queue_service import QueueService
 from domain.services.remito_data_provider import InlineRemitoDataProvider
 from domain.services.remito_render_service import PlaceholderRemitoRenderer
 from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
@@ -73,14 +68,6 @@ def get_one_status_by_name_controller() -> GetOneStatusByNameController:
     discovery = get_printer_discovery()
     use_case = GetOneStatusByNameUseCase(discovery)
     return GetOneStatusByNameController(use_case)
-
-
-def get_next_controller() -> GetNextController:
-    settings = get_settings()
-    http_client = HttpxClient()
-    queue_service = QueueService(http_client, settings)
-    use_case = GetNextUseCase(queue_service)
-    return GetNextController(use_case)
 
 
 def get_remito_template_service() -> RemitoTemplateService:
@@ -135,24 +122,6 @@ async def root(controller: HelloGetController = Depends(get_hello_controller)):
 @router.get("/health", tags=["Health"])
 async def health(controller: HealthController = Depends(get_health_controller)):
     return controller()
-
-
-@router.get(
-    "/queue/next",
-    tags=["Queue"],
-    summary="Siguiente factura",
-    description="Obtiene la proxima factura en cola usando los parametros de consulta `limit` y `host`.",
-    response_model=PrintQueueResponse,
-)
-async def queue_next(
-    limit: int = Query(1, ge=1, le=100, description="Cantidad máxima de registros a pedir."),
-    host: int = Query(..., description="Identificador del host que solicita la factura."),
-    controller: GetNextController = Depends(get_next_controller),
-) -> PrintQueueResponse:
-    try:
-        return await controller(limit, host)
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get(
