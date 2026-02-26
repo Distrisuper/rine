@@ -36,6 +36,12 @@ from application.use_cases.template.render_remito.render_remito_use_case_interfa
 from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
 from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
 from application.use_cases.template.render_label.render_label_use_case import RenderLabelUseCase
+from application.use_cases.print_jobs.create.create_print_job_use_case import CreatePrintJobUseCase
+from application.use_cases.print_jobs.create.create_print_job_use_case_interface import CreatePrintJobUseCaseInterface
+from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
+from domain.repositories.printer_repository import PrinterRepository
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -68,6 +74,23 @@ def get_one_status_by_name_controller() -> GetOneStatusByNameController:
     discovery = get_printer_discovery()
     use_case = GetOneStatusByNameUseCase(discovery)
     return GetOneStatusByNameController(use_case)
+
+
+def get_printer_repository() -> PrinterRepository:
+    from infrastructure.db.database import engine
+    return PrinterRepository(engine)
+
+
+# Pydantic models for printers
+class PrinterChannelCreate(BaseModel):
+    channel: int
+    description: Optional[str] = None
+
+
+class PrinterCreate(BaseModel):
+    name: str
+    printer_type: str
+    channels: List[PrinterChannelCreate]
 
 
 def get_remito_template_service() -> RemitoTemplateService:
@@ -112,6 +135,18 @@ def get_render_label_controller() -> RenderLabelController:
     template_service = get_label_template_service()
     use_case = RenderLabelUseCase(template_service)
     return RenderLabelController(use_case)
+
+
+class CreatePrintJobRequest(BaseModel):
+    channel: int
+    client_code: str
+    client_name: str
+    payload: Dict[str, Any]
+
+
+def get_create_print_job_controller() -> CreatePrintJobController:
+    use_case = CreatePrintJobUseCase()
+    return CreatePrintJobController(use_case)
 
 
 @router.get("/", tags=["Health"])
@@ -222,3 +257,79 @@ async def template_label_test(
         return response
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/print-jobs",
+    tags=["PrintJobs"],
+    summary="Crear trabajo de impresión",
+    description="Crea un nuevo trabajo de impresión pendiente. El worker lo procesará.",
+)
+async def create_print_job(
+    body: CreatePrintJobRequest,
+    controller: CreatePrintJobController = Depends(get_create_print_job_controller),
+):
+    try:
+        return controller(
+            channel=body.channel,
+            client_code=body.client_code,
+            client_name=body.client_name,
+            payload=body.payload,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(
+    "/printers/discover",
+    tags=["Printers"],
+    summary="Descubrir impresoras",
+    description="Usa CUPS para descubrir impresoras disponibles en el sistema.",
+)
+async def discover_printers():
+    """Usa CupsPrinterDiscovery para encontrar impresoras."""
+    discovery = CupsPrinterDiscovery()
+    printers = discovery.get_printers()
+    return [{"name": p.name, "type": p.type} for p in printers]
+
+
+@router.get(
+    "/printers",
+    tags=["Printers"],
+    summary="Listar impresoras configuradas",
+    description="Lista todas las impresoras y sus channels configurados.",
+)
+async def list_printers(repo: PrinterRepository = Depends(get_printer_repository)):
+    return repo.get_all_channels_with_printers()
+
+
+@router.post(
+    "/printers",
+    tags=["Printers"],
+    summary="Crear impresora",
+    description="Crea una nueva impresora con sus channels asociados.",
+)
+async def create_printer(
+    body: PrinterCreate,
+    repo: PrinterRepository = Depends(get_printer_repository),
+):
+    printer = repo.create_printer(body.name, body.printer_type)
+    for ch in body.channels:
+        repo.add_channel_to_printer(printer.id, ch.channel, ch.description)
+    return {"id": printer.id, "name": printer.name, "printer_type": printer.printer_type}
+
+
+@router.delete(
+    "/printers/{printer_id}",
+    tags=["Printers"],
+    summary="Eliminar impresora",
+    description="Elimina una impresora y sus channels asociados.",
+)
+async def delete_printer(
+    printer_id: int,
+    repo: PrinterRepository = Depends(get_printer_repository),
+):
+    success = repo.delete_printer(printer_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Impresora no encontrada")
+    return {"status": "deleted"}

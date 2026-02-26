@@ -19,3 +19,19 @@ services:
         uvicorn infrastructure.presentation.main:app --host 0.0.0.0 --port 8000
       "
     restart: always
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    env_file:
+      - ./.env
+    volumes:
+      - ./domain:/app/domain
+      - ./application:/app/application
+      - ./infrastructure:/app/infrastructure
+      - ./workers:/app/workers
+      - ./infrastructure/templates:/app/templates
+      - ./alembic.ini:/app/alembic.ini
+      - ./.data:/app/.data
+    restart: always
