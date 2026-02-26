@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RINE Admin - Impresoras</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RINE Print Manager</h1>
+            <p class="subtitle">Administración de Impresoras</p>
+        </header>
+
+        <div class="refresh-info">
+            <span id="last-update">Última actualización: --</span>
+            <span class="status-dot" id="connection-status"></span>
+        </div>
+
+        <section>
+            <h2>Impresoras Configuradas</h2>
+            <table id="printers-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Channel</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="printers-body">
+                    <tr>
+                        <td colspan="5" class="loading">Cargando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="actions">
+            <button onclick="loadPrinters()" class="btn-refresh">Actualizar</button>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,5 +1,7 @@
-from infrastructure.presentation.api.routes import router
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from infrastructure.presentation.api.routes import router
 
 app = FastAPI(
     title="RINE Print Manager API",
@@ -13,3 +15,6 @@ app = FastAPI(
     ],
 )
 app.include_router(router)
+
+# Serve admin dashboard at /admin
+app.mount("/admin", StaticFiles(directory="infrastructure/static/admin", html=True), name="admin")
