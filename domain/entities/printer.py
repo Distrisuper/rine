@@ -18,5 +18,6 @@ class PrinterChannel(SQLModel, table=True):
 
     printer_id: int = Field(foreign_key="printers.id", primary_key=True)
     channel: int = Field(primary_key=True)
+    channel_id: Optional[int] = Field(foreign_key="channels.id", default=None)
     description: Optional[str] = None
     is_active: bool = True

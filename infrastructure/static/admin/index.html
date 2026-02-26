@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RINE Admin - Impresoras</title>
+    <title>RINE Admin - Channels e Impresoras</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>RINE Print Manager</h1>
-            <p class="subtitle">Administración de Impresoras</p>
+            <p class="subtitle">Administración de Canales e Impresoras</p>
         </header>
 
         <div class="refresh-info">
@@ -18,29 +18,133 @@
             <span class="status-dot" id="connection-status"></span>
         </div>
 
-        <section>
-            <h2>Impresoras Configuradas</h2>
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="channels">Channels</button>
+            <button class="tab-btn" data-tab="printers">Impresoras</button>
+        </nav>
+
+        <!-- Channels Section -->
+        <section id="channels-section" class="tab-content active">
+            <div class="section-header">
+                <h2>Channels Configurados</h2>
+                <button onclick="showChannelModal()" class="btn-add">+ Nuevo Channel</button>
+            </div>
+            <table id="channels-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Channel</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="channels-body">
+                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Printers Section -->
+        <section id="printers-section" class="tab-content">
+            <div class="section-header">
+                <h2>Impresoras Configuradas</h2>
+                <button onclick="showPrinterModal()" class="btn-add">+ Nueva Impresora</button>
+            </div>
             <table id="printers-table">
                 <thead>
                     <tr>
                         <th>Nombre</th>
                         <th>Tipo</th>
-                        <th>Channel</th>
-                        <th>Descripción</th>
+                        <th>Channels</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="printers-body">
-                    <tr>
-                        <td colspan="5" class="loading">Cargando...</td>
-                    </tr>
+                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
                 </tbody>
             </table>
         </section>
+    </div>
 
-        <section class="actions">
-            <button onclick="loadPrinters()" class="btn-refresh">Actualizar</button>
-        </section>
+    <!-- Channel Modal -->
+    <div id="channel-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="channel-modal-title">Nuevo Channel</h3>
+            <form id="channel-form">
+                <input type="hidden" id="channel-id">
+                <div class="form-group">
+                    <label>Channel Number</label>
+                    <input type="number" id="channel-number" required min="1" max="999">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="channel-description">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="channel-active" checked>
+                        Activo
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeChannelModal()" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Printer Modal -->
+    <div id="printer-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="printer-modal-title">Nueva Impresora</h3>
+            <form id="printer-form">
+                <input type="hidden" id="printer-id">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="printer-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="printer-type" required>
+                        <option value="zebra">Zebra (ZPL)</option>
+                        <option value="laser">Láser (PDF)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="printer-active" checked>
+                        Activa
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closePrinterModal()" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Channels Selection Modal -->
+    <div id="printer-channels-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="printer-channels-modal-title">Channels - Impresora</h3>
+            <form id="printer-channels-form">
+                <input type="hidden" id="printer-channels-id">
+                <div class="form-group">
+                    <label>Seleccionar Channels:</label>
+                    <div id="channels-checkboxes" class="channels-list">
+                        <!-- Checkboxes generated dynamically -->
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closePrinterChannelsModal()" class="btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-save">Guardar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="app.js"></script>

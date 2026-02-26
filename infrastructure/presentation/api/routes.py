@@ -40,6 +40,7 @@ from application.use_cases.print_jobs.create.create_print_job_use_case import Cr
 from application.use_cases.print_jobs.create.create_print_job_use_case_interface import CreatePrintJobUseCaseInterface
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
 from domain.repositories.printer_repository import PrinterRepository
+from domain.repositories.channel_repository import ChannelRepository
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 
@@ -81,16 +82,37 @@ def get_printer_repository() -> PrinterRepository:
     return PrinterRepository(engine)
 
 
-# Pydantic models for printers
-class PrinterChannelCreate(BaseModel):
-    channel: int
+def get_channel_repository() -> ChannelRepository:
+    from infrastructure.db.database import engine
+    return ChannelRepository(engine)
+
+
+# Pydantic models for channels
+class ChannelCreate(BaseModel):
+    channel_number: int
     description: Optional[str] = None
+
+
+class ChannelUpdate(BaseModel):
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class PrinterCreate(BaseModel):
     name: str
     printer_type: str
-    channels: List[PrinterChannelCreate]
+    channel_ids: List[int] = []
+
+
+class PrinterUpdate(BaseModel):
+    name: Optional[str] = None
+    printer_type: Optional[str] = None
+    is_active: Optional[bool] = None
+    channel_ids: Optional[List[int]] = None
+
+
+class PrinterChannelsUpdate(BaseModel):
+    channel_ids: List[int]
 
 
 def get_remito_template_service() -> RemitoTemplateService:
@@ -297,26 +319,50 @@ async def discover_printers():
     "/printers",
     tags=["Printers"],
     summary="Listar impresoras configuradas",
-    description="Lista todas las impresoras y sus channels configurados.",
+    description="Lista todas las impresoras con sus channels.",
 )
 async def list_printers(repo: PrinterRepository = Depends(get_printer_repository)):
-    return repo.get_all_channels_with_printers()
+    return repo.get_all_printers_with_channels()
 
 
 @router.post(
     "/printers",
     tags=["Printers"],
     summary="Crear impresora",
-    description="Crea una nueva impresora con sus channels asociados.",
+    description="Crea una nueva impresora con channels asociados.",
 )
 async def create_printer(
     body: PrinterCreate,
     repo: PrinterRepository = Depends(get_printer_repository),
 ):
-    printer = repo.create_printer(body.name, body.printer_type)
-    for ch in body.channels:
-        repo.add_channel_to_printer(printer.id, ch.channel, ch.description)
-    return {"id": printer.id, "name": printer.name, "printer_type": printer.printer_type}
+    return repo.create_printer(body.name, body.printer_type, body.channel_ids or [])
+
+
+@router.put(
+    "/printers/{printer_id}",
+    tags=["Printers"],
+    summary="Editar impresora",
+    description="Edita una impresora y sus channels.",
+)
+async def update_printer(
+    printer_id: int,
+    body: PrinterUpdate,
+    repo: PrinterRepository = Depends(get_printer_repository),
+):
+    printer = repo.update_printer(
+        printer_id,
+        name=body.name,
+        printer_type=body.printer_type,
+        is_active=body.is_active,
+    )
+    if not printer:
+        raise HTTPException(status_code=404, detail="Impresora no encontrada")
+    
+    if body.channel_ids is not None:
+        repo.set_printer_channels(printer_id, body.channel_ids)
+        printer["channels"] = repo.get_printer_channels(printer_id)
+    
+    return printer
 
 
 @router.delete(
@@ -332,4 +378,86 @@ async def delete_printer(
     success = repo.delete_printer(printer_id)
     if not success:
         raise HTTPException(status_code=404, detail="Impresora no encontrada")
+    return {"status": "deleted"}
+
+
+# Channels endpoints
+@router.get(
+    "/channels",
+    tags=["Channels"],
+    summary="Listar channels",
+    description="Lista todos los channels configurados.",
+)
+async def list_channels(repo: ChannelRepository = Depends(get_channel_repository)):
+    channels = repo.get_all()
+    return [
+        {
+            "id": c.id,
+            "channel_number": c.channel_number,
+            "description": c.description,
+            "is_active": c.is_active,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in channels
+    ]
+
+
+@router.post(
+    "/channels",
+    tags=["Channels"],
+    summary="Crear channel",
+    description="Crea un nuevo channel.",
+)
+async def create_channel(
+    body: ChannelCreate,
+    repo: ChannelRepository = Depends(get_channel_repository),
+):
+    existing = repo.get_by_number(body.channel_number)
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Channel {body.channel_number} ya existe")
+    
+    channel = repo.create(body.channel_number, body.description)
+    return {
+        "id": channel.id,
+        "channel_number": channel.channel_number,
+        "description": channel.description,
+        "is_active": channel.is_active,
+    }
+
+
+@router.put(
+    "/channels/{channel_id}",
+    tags=["Channels"],
+    summary="Editar channel",
+    description="Edita la descripción o estado de un channel.",
+)
+async def update_channel(
+    channel_id: int,
+    body: ChannelUpdate,
+    repo: ChannelRepository = Depends(get_channel_repository),
+):
+    channel = repo.update(channel_id, body.description, body.is_active)
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel no encontrado")
+    return {
+        "id": channel.id,
+        "channel_number": channel.channel_number,
+        "description": channel.description,
+        "is_active": channel.is_active,
+    }
+
+
+@router.delete(
+    "/channels/{channel_id}",
+    tags=["Channels"],
+    summary="Eliminar channel",
+    description="Elimina un channel.",
+)
+async def delete_channel(
+    channel_id: int,
+    repo: ChannelRepository = Depends(get_channel_repository),
+):
+    success = repo.delete(channel_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Channel no encontrado")
     return {"status": "deleted"}
