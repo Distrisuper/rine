@@ -17,6 +17,8 @@ import logging
 import os
 from typing import Any
 
+from domain.services.printer_discovery import PrinterDiscovery
+
 logger = logging.getLogger(__name__)
 
 # RINE_MOCK_PRINTERS=1 (cualquier plataforma): devolver impresoras de prueba sin requerir CUPS/impresoras reales
@@ -162,6 +164,15 @@ def _estado_desde_atributos(attrs: dict[str, Any], modelo_fallback: str = "Gené
     }
 
 
+def _detectar_tipo_impresora(modelo: str) -> str:
+    """Detecta el tipo de impresora (zebra/laser) basándose en el modelo."""
+    modelo_lower = modelo.lower()
+    keywords_zebra = ["zebra", "label", "etiqueta", "zpl", "honeywell", "datamax", "tsc", "golio"]
+    if any(k in modelo_lower for k in keywords_zebra):
+        return "zebra"
+    return "laser"
+
+
 def monitorear_flota() -> dict[str, Any]:
     """
     Obtiene el estado de todas las impresoras vía CUPS.
@@ -241,3 +252,30 @@ def estado_impresora(nombre: str) -> dict[str, Any] | None:
             return _respuesta_mock_flota().get("printers", {}).get(nombre)
         return None
     return _estado_desde_atributos(attrs)
+
+
+class CupsPrinterDiscoveryService(PrinterDiscovery):
+    """Implementación de PrinterDiscovery usando CUPS."""
+
+    def get_flota_status(self) -> dict[str, Any]:
+        return monitorear_flota()
+
+    def get_printer_status(self, name: str) -> dict[str, Any] | None:
+        return estado_impresora(name)
+
+    def discover_printers(self) -> list[dict[str, Any]]:
+        """Lista impresoras descubiertas con nombre, modelo y tipo detectado."""
+        flota = monitorear_flota()
+        printers = flota.get("printers", {})
+        
+        result = []
+        for name, info in printers.items():
+            modelo = info.get("modelo", "Desconocida")
+            tipo = _detectar_tipo_impresora(modelo)
+            result.append({
+                "name": name,
+                "model": modelo,
+                "type": tipo,
+            })
+        
+        return result

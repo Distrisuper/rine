@@ -1,5 +1,6 @@
 const API_CHANNELS = '/channels';
 const API_PRINTERS = '/printers';
+const API_PRINTERS_DISCOVER = '/printers/discover';
 const REFRESH_INTERVAL = 30000;
 
 let allChannels = [];
@@ -187,13 +188,48 @@ function formatPrinterType(type) {
 }
 
 // Printer Modal
-function showPrinterModal(id = null, name = '', printerType = 'zebra', isActive = true) {
+let discoveredPrinters = [];
+
+async function showPrinterModal(id = null, name = '', printerType = 'zebra', isActive = true) {
     document.getElementById('printer-modal').style.display = 'flex';
     document.getElementById('printer-modal-title').textContent = id ? 'Editar Impresora' : 'Nueva Impresora';
     document.getElementById('printer-id').value = id || '';
-    document.getElementById('printer-name').value = name;
+    document.getElementById('printer-name').value = name || '';
     document.getElementById('printer-type').value = printerType;
     document.getElementById('printer-active').checked = isActive;
+    
+    // Fetch impresoras de CUPS
+    if (!id) {
+        try {
+            const response = await fetch(API_PRINTERS_DISCOVER);
+            discoveredPrinters = await response.json();
+            
+            const select = document.getElementById('printer-select');
+            select.innerHTML = '<option value="">Seleccionar impresora...</option>';
+            
+            if (discoveredPrinters.length === 0) {
+                select.innerHTML = '<option value="">No hay impresoras en CUPS</option>';
+            } else {
+                discoveredPrinters.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.name;
+                    option.textContent = `${p.name} (${p.model}) - ${p.type}`;
+                    option.dataset.type = p.type;
+                    select.appendChild(option);
+                });
+            }
+            
+            select.addEventListener('change', (e) => {
+                const selected = discoveredPrinters.find(p => p.name === e.target.value);
+                if (selected) {
+                    document.getElementById('printer-name').value = selected.name;
+                    document.getElementById('printer-type').value = selected.type;
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching printers:', error);
+        }
+    }
 }
 
 function closePrinterModal() {

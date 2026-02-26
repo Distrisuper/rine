@@ -4,13 +4,12 @@ import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import JSONResponse, Response
 
-from infrastructure.adapters.cups_printer_discovery import CupsPrinterDiscovery
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.hello.health_controller import HealthController
 from infrastructure.controllers.template.render_remito_controller import RenderRemitoController
 from infrastructure.controllers.template.render_label_controller import RenderLabelController
-from domain.repositories.printer_discovery import PrinterDiscovery
+from domain.services.printer_discovery import PrinterDiscovery
 from domain.entities.models import TemplateTestItem
 from infrastructure.services.extra_data_parser import DefaultExtraDataParser
 from domain.services.label_data_provider import InlineLabelDataProvider
@@ -31,6 +30,8 @@ from application.use_cases.printer.get_status.get_status_use_case import GetStat
 from infrastructure.controllers.printer.get_status_controller import GetStatusController
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
+from application.use_cases.printer.discover.discover_printer_use_case_interface import DiscoverPrinterUseCaseInterface
+from application.use_cases.printer.discover.discover_printer_use_case import DiscoverPrinterUseCase
 from infrastructure.controllers.printer.get_one_status_by_name_controller import GetOneStatusByNameController
 from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
 from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
@@ -62,7 +63,8 @@ def get_health_controller() -> HealthController:
 
 def get_printer_discovery() -> PrinterDiscovery:
     """Dependencia: implementación por defecto (CUPS o mock)."""
-    return CupsPrinterDiscovery()
+    from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
+    return CupsPrinterDiscoveryService()
 
 
 def get_status_controller() -> GetStatusController:
@@ -308,11 +310,12 @@ async def create_print_job(
     summary="Descubrir impresoras",
     description="Usa CUPS para descubrir impresoras disponibles en el sistema.",
 )
-async def discover_printers():
-    """Usa CupsPrinterDiscovery para encontrar impresoras."""
-    discovery = CupsPrinterDiscovery()
-    printers = discovery.get_printers()
-    return [{"name": p.name, "type": p.type} for p in printers]
+async def discover_printers(
+    discovery: PrinterDiscovery = Depends(get_printer_discovery),
+):
+    """Usa PrinterDiscovery para encontrar impresoras."""
+    use_case = DiscoverPrinterUseCase(discovery)
+    return use_case()
 
 
 @router.get(

@@ -15,3 +15,8 @@ class PrinterDiscovery(ABC):
     def get_printer_status(self, name: str) -> dict[str, Any] | None:
         """Estado de una impresora por nombre. None si no existe o no disponible."""
         pass
+
+    @abstractmethod
+    def discover_printers(self) -> list[dict[str, Any]]:
+        """Lista impresoras descubiertas con nombre, modelo y tipo detectado (zebra/laser)."""
+        pass
