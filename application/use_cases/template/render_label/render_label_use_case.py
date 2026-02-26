@@ -1,4 +1,4 @@
-from render_label_use_case_interface import RenderLabelUseCaseInterface
+from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
 
 
 class RenderLabelUseCase(RenderLabelUseCaseInterface):

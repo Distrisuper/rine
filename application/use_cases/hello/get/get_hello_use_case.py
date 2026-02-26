@@ -1,4 +1,4 @@
-from get_hello_use_case_interface import GetHelloUseCaseInterface
+from application.use_cases.hello.get.get_hello_use_case_interface import GetHelloUseCaseInterface
 
 
 class GetHelloUseCase(GetHelloUseCaseInterface):

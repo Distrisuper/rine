@@ -1,4 +1,4 @@
-from get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
+from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
 
 
 class GetOneStatusByNameUseCase(GetOneStatusByNameUseCaseInterface):

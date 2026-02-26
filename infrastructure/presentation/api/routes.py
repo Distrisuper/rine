@@ -16,13 +16,13 @@ from infrastructure.controllers.template.render_remito_controller import RenderR
 from infrastructure.controllers.template.render_label_controller import RenderLabelController
 from domain.repositories.printer_discovery import PrinterDiscovery
 from domain.entities.models import PrintQueueResponse, TemplateTestItem
-from domain.services.extra_data_parser import DefaultExtraDataParser
+from infrastructure.services.extra_data_parser import DefaultExtraDataParser
 from domain.services.label_data_provider import InlineLabelDataProvider
 from domain.services.label_render_service import PlaceholderLabelRenderer
 from domain.services.label_template_resolver import LegacyLabelTemplateResolver
 from domain.services.label_template_service import LabelTemplateService
 from infrastructure.print_job_service import print_pdf_to_printer
-from domain.services.queue_service import QueueService
+from infrastructure.services.queue_service import QueueService
 from domain.services.remito_data_provider import InlineRemitoDataProvider
 from domain.services.remito_render_service import PlaceholderRemitoRenderer
 from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
@@ -85,9 +85,11 @@ def get_next_controller() -> GetNextController:
 
 def get_remito_template_service() -> RemitoTemplateService:
     """Servicio de remito: HTML+WeasyPrint si está disponible, sino placeholder PDF."""
+    from infrastructure.services.barcode_service import BarcodeService
+    barcode_service = BarcodeService()
     try:
         from infrastructure.html_remito_render_service import HtmlRemitoRenderer
-        renderer = HtmlRemitoRenderer()
+        renderer = HtmlRemitoRenderer(barcode_service)
     except Exception as e:
         logger.warning(
             "Remito HTML renderer no disponible, usando placeholder PDF: %s",

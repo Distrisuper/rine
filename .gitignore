@@ -94,3 +94,6 @@ redis_data/
 # Logs
 logs/
 *.log
+
+# Database
+.data/

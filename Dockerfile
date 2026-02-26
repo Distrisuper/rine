@@ -19,8 +19,11 @@ RUN apt-get update \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-COPY tests ./tests
+# Copiar estructura DDD
+COPY domain ./domain
+COPY application ./application
+COPY infrastructure ./infrastructure
+COPY alembic.ini ./
 
 FROM base AS test
 
@@ -30,4 +33,4 @@ CMD ["python", "-m", "unittest", "discover", "-s", "tests"]
 
 FROM base AS runtime
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "infrastructure.presentation.main:app", "--host", "0.0.0.0", "--port", "8000"]

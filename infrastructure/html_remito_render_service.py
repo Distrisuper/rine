@@ -11,7 +11,7 @@ from weasyprint import HTML
 
 from domain.repositories.remito_renderer import RemitoRenderer
 from domain.entities.models import RemitoRenderData
-from domain.services.barcode_service import code39_svg_data_url
+from domain.services.barcode_service_interface import BarcodeServiceInterface
 
 
 def _logo_data_url(templates_dir: Path) -> str | None:
@@ -33,7 +33,7 @@ def _logo_data_url(templates_dir: Path) -> str | None:
     return None
 
 
-def _data_to_context(data: RemitoRenderData) -> dict:
+def _data_to_context(data: RemitoRenderData, barcode_service: BarcodeServiceInterface) -> dict:
     """Convierte RemitoRenderData a dict para Jinja2."""
     remito_id = data.remito_id or ""
     return {
@@ -45,7 +45,7 @@ def _data_to_context(data: RemitoRenderData) -> dict:
         "items": data.items,
         "total": data.total,
         "remito_id": remito_id,
-        "barcode_data_url": code39_svg_data_url(remito_id),
+        "barcode_data_url": barcode_service.to_svg_data_url(remito_id),
         "fecha": data.fecha,
         "reparto": data.reparto,
         "sucursal": data.sucursal,
@@ -66,7 +66,12 @@ class HtmlRemitoRenderer(RemitoRenderer):
     Requiere weasyprint instalado; si no está, instanciar falla (usar PlaceholderRemitoRenderer).
     """
 
-    def __init__(self, templates_dir: Path | None = None):
+    def __init__(
+        self,
+        barcode_service: BarcodeServiceInterface,
+        templates_dir: Path | None = None,
+    ):
+        self._barcode_service = barcode_service
         if templates_dir is None:
             templates_dir = Path(__file__).resolve().parent.parent / "templates" / "remitos"
         self._templates_dir = Path(templates_dir)
@@ -77,7 +82,6 @@ class HtmlRemitoRenderer(RemitoRenderer):
 
     def _template_name(self, template_id: str) -> str:
         """Mapea template_id a nombre de archivo; por defecto base_remito.html."""
-        # Si existe un HTML con el nombre del template_id, usarlo; si no, base
         candidate = f"{template_id}.html"
         if (self._templates_dir / candidate).exists():
             return candidate
@@ -85,7 +89,7 @@ class HtmlRemitoRenderer(RemitoRenderer):
 
     def render(self, template_id: str, data: RemitoRenderData) -> bytes:
         template = self._env.get_template(self._template_name(template_id))
-        context = _data_to_context(data)
+        context = _data_to_context(data, self._barcode_service)
         context["logo_data_url"] = _logo_data_url(self._templates_dir)
         html_string = template.render(**context)
 

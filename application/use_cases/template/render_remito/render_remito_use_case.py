@@ -1,4 +1,4 @@
-from render_remito_use_case_interface import RenderRemitoUseCaseInterface
+from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
 
 
 class RenderRemitoUseCase(RenderRemitoUseCaseInterface):

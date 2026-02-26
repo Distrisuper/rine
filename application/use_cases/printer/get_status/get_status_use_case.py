@@ -1,4 +1,4 @@
-from get_status_use_case_interface import GetStatusUseCaseInterface
+from application.use_cases.printer.get_status.get_status_use_case_interface import GetStatusUseCaseInterface
 
 
 class GetStatusUseCase(GetStatusUseCaseInterface):

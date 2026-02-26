@@ -7,6 +7,11 @@ services:
     volumes:
       - redis_data:/data
     restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   app:
     build: .
@@ -16,10 +21,20 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     volumes:
-      - ./app:/app/app
-      - ./tests:/app/tests
+      - ./domain:/app/domain
+      - ./application:/app/application
+      - ./infrastructure:/app/infrastructure
+      - ./infrastructure/templates:/app/templates
+      - ./alembic.ini:/app/alembic.ini
+      - ./.data:/app/.data
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn infrastructure.presentation.main:app --host 0.0.0.0 --port 8000
+      "
     restart: always
 
 volumes:
