@@ -1,7 +1,14 @@
+from functools import lru_cache
+
 from sqlmodel import SQLModel, create_engine
 
-engine = create_engine("sqlite:////app/.data/rine.db", echo=False)
+from infrastructure.config import Settings, get_settings
 
 
-def get_engine():
-    return engine
+@lru_cache
+def get_engine() -> create_engine:
+    settings = get_settings()
+    return create_engine(settings.database_url, echo=False)
+
+
+engine = get_engine()

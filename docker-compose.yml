@@ -35,3 +35,17 @@ services:
       - ./alembic.ini:/app/alembic.ini
       - ./.data:/app/.data
     restart: always
+
+  test:
+    build:
+      context: .
+      target: test
+    env_file:
+      - ./.env
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./tests:/app/tests
+      - ./.data:/app/.data
+    profiles:
+      - test

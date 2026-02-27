@@ -29,7 +29,9 @@ FROM base AS test
 
 COPY tests ./tests
 
-CMD ["python", "-m", "unittest", "discover", "-s", "tests"]
+RUN mkdir -p /app/.data && touch /app/.data/rine_test.db
+
+CMD ["pytest", "tests/", "-v", "--tb=short"]
 
 FROM base AS runtime
 
