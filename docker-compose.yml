@@ -13,7 +13,7 @@ services:
       - ./infrastructure/templates:/app/templates
       - ./alembic.ini:/app/alembic.ini
       - ./.data:/app/.data
-      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+      - /run/cups/cups.sock:/var/run/cups/cups.sock
     command: >
       sh -c "
         alembic upgrade head &&
@@ -35,6 +35,24 @@ services:
       - ./infrastructure/templates:/app/templates
       - ./alembic.ini:/app/alembic.ini
       - ./.data:/app/.data
+      - /run/cups/cups.sock:/var/run/cups/cups.sock
+    restart: always
+
+  worker-status:
+    build:
+      context: .
+      dockerfile: Dockerfile.status
+    env_file:
+      - ./.env
+    volumes:
+      - ./domain:/app/domain
+      - ./application:/app/application
+      - ./infrastructure:/app/infrastructure
+      - ./workers:/app/workers
+      - ./infrastructure/templates:/app/templates
+      - ./alembic.ini:/app/alembic.ini
+      - ./.data:/app/.data
+      - /run/cups/cups.sock:/var/run/cups/cups.sock
     restart: always
 
   test:

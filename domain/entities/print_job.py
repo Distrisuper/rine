@@ -30,6 +30,7 @@ class PrintJob(SQLModel, table=True):
     printer_name: Optional[str] = None
     error_message: Optional[str] = None
     processing_since: Optional[datetime] = None
+    cups_job_id: Optional[int] = Field(default=None)
 
     def get_printer(self) -> PrinterConfig:
         return PrinterRegistry.get_printer_for_channel(self.channel)

@@ -1,5 +1,6 @@
 # API routes mínimas
 import base64
+import json
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import JSONResponse, Response
@@ -44,7 +45,9 @@ from domain.repositories.printer_repository import PrinterRepository
 from domain.repositories.channel_repository import ChannelRepository
 from domain.repositories.template_repository import TemplateRepository
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Any, Dict, List, Optional
+from sqlmodel import select, and_, desc
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -328,6 +331,85 @@ async def create_print_job(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+class PrintJobResponse(BaseModel):
+    id: int
+    client_code: str
+    client_name: str
+    channel: int
+    status: str
+    print_count: int
+    print_type: Optional[str]
+    date_created: datetime
+    date_started: Optional[datetime]
+    date_processed: Optional[datetime]
+    printer_name: Optional[str]
+    error_message: Optional[str]
+
+
+@router.get(
+    "/print-jobs",
+    tags=["PrintJobs"],
+    summary="Listar trabajos de impresión",
+    description="Lista trabajos de impresión con filtros opcionales.",
+)
+async def list_print_jobs(
+    printer_name: Optional[str] = Query(None, description="Filtrar por nombre de impresora"),
+    date_from: Optional[datetime] = Query(None, description="Fecha inicio (ISO)"),
+    date_to: Optional[datetime] = Query(None, description="Fecha fin (ISO)"),
+    status: Optional[str] = Query(None, description="Filtrar por status: pending, printed, failed"),
+    page: int = Query(1, ge=1, description="Página"),
+    limit: int = Query(100, ge=1, le=500, description="Registros por página"),
+):
+    from domain.entities.print_job import PrintJob
+    from infrastructure.db.database import engine
+    from sqlmodel import Session
+
+    with Session(engine) as session:
+        query = select(PrintJob)
+
+        filters = []
+        if printer_name:
+            filters.append(PrintJob.printer_name == printer_name)
+        if date_from:
+            filters.append(PrintJob.date_created >= date_from)
+        if date_to:
+            filters.append(PrintJob.date_created <= date_to)
+        if status:
+            filters.append(PrintJob.status == status)
+
+        if filters:
+            query = query.where(and_(*filters))
+
+        query = query.order_by(desc(PrintJob.date_created))
+
+        total = len(session.exec(query).all())
+        query = query.offset((page - 1) * limit).limit(limit)
+        jobs = session.exec(query).all()
+
+        return {
+            "data": [
+                {
+                    "id": j.id,
+                    "client_code": j.client_code,
+                    "client_name": j.client_name,
+                    "channel": j.channel,
+                    "status": j.status,
+                    "print_count": j.print_count,
+                    "print_type": j.print_type,
+                    "date_created": j.date_created.isoformat() if j.date_created else None,
+                    "date_started": j.date_started.isoformat() if j.date_started else None,
+                    "date_processed": j.date_processed.isoformat() if j.date_processed else None,
+                    "printer_name": j.printer_name,
+                    "error_message": j.error_message,
+                }
+                for j in jobs
+            ],
+            "page": page,
+            "limit": limit,
+            "total": total,
+        }
+
+
 @router.get(
     "/printers/discover",
     tags=["Printers"],
@@ -405,6 +487,100 @@ async def delete_printer(
     if not success:
         raise HTTPException(status_code=404, detail="Impresora no encontrada")
     return {"status": "deleted"}
+
+
+@router.post(
+    "/printers/{printer_id}/test",
+    tags=["Printers"],
+    summary="Test de impresión",
+    description="Envía trabajos de prueba a todos los channels configurados en la impresora.",
+)
+async def test_printer(
+    printer_id: int,
+    repo: PrinterRepository = Depends(get_printer_repository),
+):
+    from domain.entities.channel import Channel
+    from domain.entities.template import Template
+    from domain.entities.print_job import PrintJob
+    from infrastructure.db.database import engine
+    from sqlmodel import Session
+    import random
+
+    printer = repo.get_printer_by_id(printer_id)
+    if not printer:
+        raise HTTPException(status_code=404, detail="Impresora no encontrada")
+
+    channels = repo.get_printer_channels(printer_id)
+    if not channels:
+        raise HTTPException(status_code=400, detail="La impresora no tiene channels configurados")
+
+    created_jobs = []
+
+    with Session(engine) as session:
+        for ch in channels:
+            channel_obj = session.get(Channel, ch["channel_id"])
+            if not channel_obj or not channel_obj.template_id:
+                continue
+
+            template = session.get(Template, channel_obj.template_id)
+            if not template:
+                continue
+
+            file_path = template.file_path.lower()
+            if file_path.endswith(".zpl"):
+                payload = {
+                    "to": f"Test Destinatario {random.randint(1000, 9999)}",
+                    "address": f"Test Dirección {random.randint(100, 999)}",
+                    "city": "Test Ciudad",
+                    "packages": f"{random.randint(1, 5)} bulto(s)",
+                }
+            elif file_path.endswith(".html"):
+                payload = {
+                    "client_code": f"{random.randint(100, 999)}",
+                    "client_name": "Test Cliente S.A.",
+                    "order_number": random.randint(1000, 9999),
+                    "address": f"Test Dirección {random.randint(100, 999)}",
+                    "city": "Test Ciudad",
+                    "items": [
+                        {"codigo": "TEST001", "cantidad": random.randint(1, 10), "descripcion": "Producto de prueba"},
+                        {"codigo": "TEST002", "cantidad": random.randint(1, 5), "descripcion": "Otro producto"},
+                    ],
+                    "total": round(random.uniform(100, 5000), 2),
+                    "remito_id": f"R-TEST-{random.randint(100000, 999999)}",
+                    "fecha": "27/02/2026",
+                    "reparto": "Test Reparto",
+                    "sucursal": "001",
+                    "obs": "Trabajo de prueba",
+                    "cant_unidades": str(random.randint(1, 20)),
+                    "valor_declarado": f"${random.randint(100, 5000)}",
+                    "numero_cot": f"COT-{random.randint(10000, 99999)}",
+                    "numero_cai": f"CAI-{random.randint(10000, 99999)}",
+                    "vencimiento": "15/03/2026",
+                    "disclaimer": "Trabajo de prueba generado desde admin",
+                }
+            else:
+                continue
+
+            job = PrintJob(
+                client_code=payload.get("client_code", "TEST"),
+                client_name=payload.get("client_name", "Test Cliente"),
+                channel=ch["channel_number"],
+                payload=json.dumps(payload),
+                status="pending",
+                print_count=0,
+            )
+            session.add(job)
+            session.commit()
+            session.refresh(job)
+
+            created_jobs.append({
+                "id": job.id,
+                "channel": ch["channel_number"],
+                "template": template.name,
+                "status": job.status,
+            })
+
+    return {"printer": printer.name, "jobs": created_jobs}
 
 
 # Channels endpoints

@@ -193,13 +193,22 @@ tr.inactive td {
 }
 
 /* Buttons */
-.btn-edit, .btn-delete {
+.btn-edit, .btn-delete, .btn-test {
     padding: 5px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 12px;
     margin-right: 5px;
+}
+
+.btn-test {
+    background: #9b59b6;
+    color: white;
+}
+
+.btn-test:hover {
+    background: #8e44ad;
 }
 
 .btn-edit {
@@ -361,4 +370,80 @@ tr.inactive td {
 .checkbox-item span {
     font-size: 14px;
     color: #333;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+}
+
+.btn-filter {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-filter:hover {
+    background: #2980b9;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.pagination {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+/* Status badges for Print Jobs */
+.status-badge.status-printed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.status-failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.status-pending {
+    background: #fff3cd;
+    color: #856404;
 }

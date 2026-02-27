@@ -21,6 +21,7 @@
         <nav class="tabs">
             <button class="tab-btn active" data-tab="channels">Channels</button>
             <button class="tab-btn" data-tab="printers">Impresoras</button>
+            <button class="tab-btn" data-tab="print-jobs">Print Jobs</button>
         </nav>
 
         <!-- Channels Section -->
@@ -64,6 +65,63 @@
                     <tr><td colspan="5" class="loading">Cargando...</td></tr>
                 </tbody>
             </table>
+        </section>
+
+        <!-- Print Jobs Section -->
+        <section id="print-jobs-section" class="tab-content">
+            <div class="section-header">
+                <h2>Trabajos de Impresión</h2>
+                <button onclick="loadPrintJobs()" class="btn-add">Actualizar</button>
+            </div>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Impresora</label>
+                    <select id="filter-printer">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Desde</label>
+                    <input type="datetime-local" id="filter-date-from">
+                </div>
+                <div class="filter-group">
+                    <label>Hasta</label>
+                    <input type="datetime-local" id="filter-date-to">
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filter-status">
+                        <option value="">Todos</option>
+                        <option value="pending">Pending</option>
+                        <option value="printed">Printed</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Página</label>
+                    <input type="number" id="filter-page" value="1" min="1" style="width: 60px;">
+                </div>
+                <button onclick="loadPrintJobs()" class="btn-filter">Filtrar</button>
+            </div>
+            <div class="pagination-info" id="pagination-info"></div>
+            <table id="print-jobs-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Channel</th>
+                        <th>Impresora</th>
+                        <th>Status</th>
+                        <th>Intentos</th>
+                        <th>Fecha Creación</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody id="print-jobs-body">
+                    <tr><td colspan="8" class="loading">Cargando...</td></tr>
+                </tbody>
+            </table>
+            <div class="pagination" id="print-jobs-pagination"></div>
         </section>
     </div>
 
