@@ -22,7 +22,7 @@ class TestPrintAPI(unittest.TestCase):
             "package_quantity": 5,
             "redi_code": "REDI001",
             "id_remito": "REM001",
-            "label_packages": 10,
+            "ahora q": 10,
         }
         response = self.client.post("/print", json=payload)
         self.assertEqual(response.status_code, 200)

@@ -1,0 +1,122 @@
+# Print Job Flow
+
+## Flujo Completo de un Print Job
+
+```mermaid
+flowchart TB
+    subgraph CREATION["1. CREACIÓN DEL PRINT JOB"]
+        A1["POST /print-jobs"]
+        A2["CreatePrintJobUseCase"]
+        A3["PrintJob entity"]
+        A1 --> A2 --> A3
+        A3 --> DB1[("DB: print_jobs<br/>status='pending'")]
+    end
+
+    subgraph WORKER["2. WORKER PROCESAMIENTO"]
+        W1["PrintWorker<br/>(poll cada 5s)"]
+        W2["_get_next_pending_job()"]
+        W3["Lock job<br/>processing_since=now"]
+        W1 --> W2 --> W3
+    end
+
+    subgraph RESOLUTION["3. RESOLUCIÓN"]
+        R1["PrinterRepository<br/>get_printer_for_channel()"]
+        R2["PrintJob.get_template()"]
+        R3["Query Channel<br/>→ template_id"]
+        R4["Fetch Template"]
+        R1 --> DB2[("DB: printers<br/>printer_channels<br/>channels")]
+        R2 --> R3 --> R4
+        R3 --> DB3[("DB: channels<br/>templates")]
+    end
+
+    subgraph RENDER["4. RENDERIZADO"]
+        RH1["PrintJob.render()"]
+        RH2{file_path<br/>extension?}
+        RH3["<b>.zpl</b><br/>→ _render_label()"]
+        RH4["<b>.html</b><br/>→ _render_remito()"]
+        RH5["Jinja2 template"]
+        RH6["Jinja2 + WeasyPrint<br/>+ BarcodeService"]
+        RH1 --> RH2
+        RH2 -->|".zpl"| RH3 --> RH5 --> ZPL[("ZPL bytes")]
+        RH2 -->|".html"| RH4 --> RH6 --> PDF[("PDF bytes")]
+        
+        subgraph DATA["Parse payload"]
+            D1["get_render_data_label()"]
+            D2["get_render_data_remito()"]
+            RH3 --> D1
+            RH4 --> D2
+        end
+    end
+
+    subgraph SEND["5. ENVÍO A IMPRESORA"]
+        S1["_send_to_printer()<br/>(placeholder)"]
+        S2["Update job status<br/>status='printed'"]
+        S1 --> S2 --> DB4[("DB: print_jobs<br/>updated")]
+    end
+
+    DB1 --> WORKER
+    WORKER --> RESOLUTION
+    RESOLUTION --> RENDER
+    RENDER --> SEND
+    
+    style CREATION fill:#e1f5fe
+    style WORKER fill:#fff3e0
+    style RESOLUTION fill:#e8f5e9
+    style RENDER fill:#fce4ec
+    style SEND fill:#f3e5f5
+```
+
+---
+
+## Descripción del Flujo
+
+| Paso | Componente | Descripción |
+|------|-----------|-------------|
+| **1** | API → UseCase → Entity | Se crea el PrintJob en la DB con status "pending" |
+| **2** | Worker poll | El worker hace polling cada 5 segundos buscando jobs pending |
+| **3** | Resolución | Se busca en la DB la impresora y el template asociados al channel |
+| **4** | Renderizado | Se decide por extensión (.zpl = label, .html = remito/PDF) |
+| **5** | Envío | Se envía a la impresora y se actualiza el status |
+
+---
+
+## Entidades Principales
+
+| Entidad | Tabla DB | Relación |
+|---------|----------|----------|
+| **PrintJob** | `print_jobs` | Datos del trabajo |
+| **Channel** | `channels` | Define tipo de documento |
+| **Template** | `templates` | Archivo (file_path) a usar |
+| **Printer** | `printers` | Impresora física |
+| **PrinterChannel** | `printer_channels` | Relación many-to-many |
+
+---
+
+## Decisión de Template
+
+```
+print_job.render()
+    │
+    ├── template = get_template()
+    │       │
+    │       └── Query: Channel → template_id → Template
+    │
+    └── if template.file_path.endswith('.zpl'):
+    │       └── _render_label() → ZPL bytes
+    │
+    └── elif template.file_path.endswith('.html'):
+            └── _render_remito() → PDF bytes (via WeasyPrint)
+```
+
+---
+
+## Decisión de Impresora
+
+```
+Worker._process_one_job()
+    │
+    └── printer = printer_repo.get_printer_for_channel(channel)
+            │
+            └── Join: Printer → PrinterChannel → Channel
+                      WHERE channel_number = {channel}
+```

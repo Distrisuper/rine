@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Optional
 import json
 
-from domain.entities.document_type import get_document_type
 from domain.entities.printer_registry import PrinterRegistry, PrinterConfig
 from domain.entities.render_data import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
@@ -32,9 +31,6 @@ class PrintJob(SQLModel, table=True):
     error_message: Optional[str] = None
     processing_since: Optional[datetime] = None
 
-    def get_document_type(self) -> dict:
-        return get_document_type(self.channel)
-
     def get_printer(self) -> PrinterConfig:
         return PrinterRegistry.get_printer_for_channel(self.channel)
 
@@ -47,50 +43,51 @@ class PrintJob(SQLModel, table=True):
                 return None
             return session.get(Template, channel.template_id)
 
-    def get_render_data(self) -> LabelRenderData | RemitoRenderData:
-        data = json.loads(self.payload)
-        doc_type = self.get_document_type()
-
-        if self.channel == 3:
-            return LabelRenderData(
-                to=data.get("to", ""),
-                address=data.get("address", ""),
-                city=data.get("city", ""),
-                packages=data.get("packages", ""),
-            )
-        elif self.channel in (4, 8):
-            return RemitoRenderData(
-                client_code=data.get("client_code", ""),
-                client_name=data.get("client_name", ""),
-                order_number=data.get("order_number", 0),
-                address=data.get("address", ""),
-                city=data.get("city", ""),
-                items=data.get("items", []),
-                total=data.get("total", 0.0),
-                remito_id=data.get("remito_id", ""),
-                fecha=data.get("fecha", ""),
-                reparto=data.get("reparto"),
-                sucursal=data.get("sucursal"),
-                obs=data.get("obs"),
-                cant_unidades=data.get("cant_unidades"),
-                valor_declarado=data.get("valor_declarado"),
-                numero_cot=data.get("numero_cot"),
-                numero_cai=data.get("numero_cai"),
-                vencimiento=data.get("vencimiento"),
-                disclaimer=data.get("disclaimer"),
-            )
-
-        raise ValueError(f"Tipo de documento no soportado: {self.channel}")
-
     def render(self) -> bytes:
         template = self.get_template()
         if not template:
             raise ValueError(f"No hay template configurado para channel {self.channel}")
 
-        if self.channel == 3:
-            return self._render_label(self.get_render_data(), template.file_path)
-        else:
-            return self._render_remito(self.get_render_data(), template.file_path)
+        file_path = template.file_path
+
+        if file_path.endswith('.zpl'):
+            return self._render_label(self.get_render_data_label(), file_path)
+        elif file_path.endswith('.html'):
+            return self._render_remito(self.get_render_data_remito(), file_path)
+
+        raise ValueError(f"Template no soportado: {file_path}")
+
+    def get_render_data_label(self) -> LabelRenderData:
+        data = json.loads(self.payload)
+        return LabelRenderData(
+            to=data.get("to", ""),
+            address=data.get("address", ""),
+            city=data.get("city", ""),
+            packages=data.get("packages", ""),
+        )
+
+    def get_render_data_remito(self) -> RemitoRenderData:
+        data = json.loads(self.payload)
+        return RemitoRenderData(
+            client_code=data.get("client_code", ""),
+            client_name=data.get("client_name", ""),
+            order_number=data.get("order_number", 0),
+            address=data.get("address", ""),
+            city=data.get("city", ""),
+            items=data.get("items", []),
+            total=data.get("total", 0.0),
+            remito_id=data.get("remito_id", ""),
+            fecha=data.get("fecha", ""),
+            reparto=data.get("reparto"),
+            sucursal=data.get("sucursal"),
+            obs=data.get("obs"),
+            cant_unidades=data.get("cant_unidades"),
+            valor_declarado=data.get("valor_declarado"),
+            numero_cot=data.get("numero_cot"),
+            numero_cai=data.get("numero_cai"),
+            vencimiento=data.get("vencimiento"),
+            disclaimer=data.get("disclaimer"),
+        )
 
     def _render_label(self, data: LabelRenderData, file_path: str) -> bytes:
         from jinja2 import Template

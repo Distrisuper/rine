@@ -1,8 +1,8 @@
 """Orquestador rótulo: parse → resolver → data provider → render → ZPL."""
 from domain.services.extra_data_parser_interface import ExtraDataParser
-from domain.repositories.label_data_provider import LabelDataProvider
-from domain.repositories.label_renderer import LabelRenderer
-from domain.repositories.label_template_resolver import LabelTemplateResolver
+from domain.services.label_data_provider import LabelDataProvider
+from domain.services.label_renderer import LabelRenderer
+from domain.services.label_template_resolver import LabelTemplateResolver
 from domain.entities.models import QueueItem
 
 

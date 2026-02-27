@@ -5,7 +5,6 @@ from application.use_cases.print_jobs.create.create_print_job_use_case_interface
     CreatePrintJobUseCaseInterface,
 )
 from domain.entities.print_job import PrintJob
-from domain.entities.document_type import get_document_type
 from sqlmodel import Session
 from infrastructure.db.database import engine
 
@@ -18,8 +17,6 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
         client_name: str,
         payload: dict,
     ) -> dict:
-        doc_type = get_document_type(channel)
-
         job = PrintJob(
             client_code=client_code,
             client_name=client_name,

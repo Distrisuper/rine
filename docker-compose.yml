@@ -13,6 +13,7 @@ services:
       - ./infrastructure/templates:/app/templates
       - ./alembic.ini:/app/alembic.ini
       - ./.data:/app/.data
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
     command: >
       sh -c "
         alembic upgrade head &&

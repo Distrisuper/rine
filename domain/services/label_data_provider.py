@@ -1,30 +1,33 @@
-"""Construye LabelRenderData desde QueueItem y ExtraDataRemito."""
-from domain.repositories.label_data_provider import LabelDataProvider
+"""Interfaz para obtener datos de etiqueta/rótulo a partir del ítem."""
+from abc import ABC, abstractmethod
+
 from domain.entities.models import ExtraDataRemito, LabelRenderData, QueueItem
 
 
+class LabelDataProvider(ABC):
+    """Contrato para armar LabelRenderData a partir del ítem y extra_data."""
+
+    @abstractmethod
+    def get_render_data(
+        self,
+        item: QueueItem,
+        extra: ExtraDataRemito | None,
+    ) -> LabelRenderData:
+        """Construye los datos necesarios para renderizar la etiqueta."""
+        pass
+
+
 class InlineLabelDataProvider(LabelDataProvider):
-    """Armado de datos de etiqueta solo desde ítem y extra_data."""
+    """Implementación que usa datos inline del ítem."""
 
     def get_render_data(
         self,
         item: QueueItem,
         extra: ExtraDataRemito | None,
     ) -> LabelRenderData:
-        if not extra:
-            return LabelRenderData(
-                to=item.client_name or "",
-                address="",
-                city=item.location or "",
-                packages="",
-                transport="",
-                observations="",
-            )
         return LabelRenderData(
-            to=extra.label_to or item.client_name or "",
-            address=extra.label_address or "",
-            city=extra.label_city or item.location or "",
-            packages=extra.label_packages or "",
-            transport=extra.label_transport or "",
-            observations="",
+            to=item.client_name or "",
+            address=getattr(item, "address", "") or "",
+            city=getattr(item, "city", "") or "",
+            packages=str(item.quantity) if hasattr(item, "quantity") and item.quantity else "",
         )

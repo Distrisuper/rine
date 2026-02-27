@@ -48,3 +48,40 @@ def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "
         return job_id
     finally:
         path.unlink(missing_ok=True)
+
+
+def print_raw_to_printer(
+    printer_name: str,
+    raw_bytes: bytes,
+    job_title: str = "Etiqueta",
+    suffix: str = ".zpl",
+) -> int:
+    """
+    Envía datos en bruto (ej. ZPL) a una cola CUPS por nombre.
+    Pensado para impresoras de etiquetas (Zebra) configuradas con cola raw (-m raw).
+
+    Returns:
+        job_id del trabajo enviado a CUPS.
+
+    Raises:
+        RuntimeError: si CUPS no está disponible (ej. Windows).
+        ValueError: si la impresora no existe o falla el envío.
+    """
+    if not CUPS_AVAILABLE or cups is None:
+        raise RuntimeError("CUPS no disponible (solo Linux con pycups)")
+
+    conn = cups.Connection()
+    printers = conn.getPrinters()
+    if printer_name not in printers:
+        raise ValueError(f"Impresora '{printer_name}' no existe en CUPS. Disponibles: {list(printers.keys())}")
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+        f.write(raw_bytes)
+        path = Path(f.name)
+
+    try:
+        job_id = conn.printFile(printer_name, str(path), job_title, {})
+        logger.info("Trabajo ZPL/raw enviado a %s: job_id=%s", printer_name, job_id)
+        return job_id
+    finally:
+        path.unlink(missing_ok=True)

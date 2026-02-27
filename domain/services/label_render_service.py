@@ -2,7 +2,7 @@
 Render de etiqueta: template_id + LabelRenderData → ZPL.
 Placeholder: genera ZPL mínimo para pruebas hasta integrar template real.
 """
-from domain.repositories.label_renderer import LabelRenderer
+from domain.services.label_renderer import LabelRenderer
 from domain.entities.models import LabelRenderData
 
 

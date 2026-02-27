@@ -57,10 +57,9 @@ function renderChannels(channels) {
     
     tbody.innerHTML = channels.map(c => {
         const activeClass = c.is_active ? 'active' : 'inactive';
-        const templateName = allTemplates.find(t => t.id === c.template_id)?.name || '-';
+        const templateName = c.template_name || '-';
         return `
             <tr class="${activeClass}">
-                <td>${c.id}</td>
                 <td><strong>${c.channel_number}</strong></td>
                 <td>${c.description || '-'}</td>
                 <td>${templateName}</td>

@@ -1,8 +1,8 @@
 """Orquestador remito: parse → resolver → data provider → render → PDF."""
 from domain.services.extra_data_parser_interface import ExtraDataParser
-from domain.repositories.remito_data_provider import RemitoDataProvider
-from domain.repositories.remito_renderer import RemitoRenderer
-from domain.repositories.remito_template_resolver import RemitoTemplateResolver
+from domain.services.remito_data_provider import RemitoDataProvider
+from domain.services.remito_renderer import RemitoRenderer
+from domain.services.remito_template_resolver import RemitoTemplateResolver
 from domain.entities.models import QueueItem
 
 

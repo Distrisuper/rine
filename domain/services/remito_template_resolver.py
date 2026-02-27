@@ -1,13 +1,26 @@
-"""
-Resolver de template de remito según reglas legacy (server, ds, location).
-Solo aplica a channel 4 y 8.
-"""
-from domain.repositories.remito_template_resolver import RemitoTemplateResolver
+"""Interfaz para resolver el template de remito según channel y contexto (legacy: server, ds, location)."""
+from abc import ABC, abstractmethod
+
 from domain.entities.models import ResolvedTemplate
 
 
+class RemitoTemplateResolver(ABC):
+    """Contrato para obtener el template_id de remito según reglas legacy."""
+
+    @abstractmethod
+    def resolve(
+        self,
+        channel: int,
+        location: str,
+        server: str | None = None,
+        ds: str | None = None,
+    ) -> ResolvedTemplate | None:
+        """Devuelve el template para remito (channel 4 u 8) o None si no aplica."""
+        pass
+
+
 class LegacyRemitoTemplateResolver(RemitoTemplateResolver):
-    """Reglas C#: server, ds, sucursal → template_id."""
+    """Implementación legacy que retorna un template por defecto."""
 
     def resolve(
         self,
@@ -16,30 +29,6 @@ class LegacyRemitoTemplateResolver(RemitoTemplateResolver):
         server: str | None = None,
         ds: str | None = None,
     ) -> ResolvedTemplate | None:
-        if channel not in (4, 8):
-            return None
-        template_id = self._template_id_for(location, server, ds)
-        return ResolvedTemplate(template_id=template_id, output_type="pdf")
-
-    def _template_id_for(
-        self,
-        location: str,
-        server: str | None,
-        ds: str | None,
-    ) -> str:
-        if ds == "remito":
-            sucursal = (location or "").upper()
-            if sucursal == "MDP":
-                return "templateremnooficialMDP"
-            if sucursal == "BA":
-                return "templateremnooficialBA"
-            if sucursal == "ROS":
-                return "templateremnooficialROS"
-            return "templateremnooficialPICO"
-        if ds == "1":
-            return "templateds"
-        if (location or "").upper() == "ROS":
-            return "templateros"
-        if server == "1":
-            return "template"
-        return "templatedimes"
+        if channel in (4, 8):
+            return ResolvedTemplate(template_id="remito_default", output_type="pdf")
+        return None

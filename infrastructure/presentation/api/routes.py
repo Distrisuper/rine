@@ -16,7 +16,7 @@ from domain.services.label_data_provider import InlineLabelDataProvider
 from domain.services.label_render_service import PlaceholderLabelRenderer
 from domain.services.label_template_resolver import LegacyLabelTemplateResolver
 from domain.services.label_template_service import LabelTemplateService
-from infrastructure.print_job_service import print_pdf_to_printer
+from infrastructure.print_job_service import print_pdf_to_printer, print_raw_to_printer
 from domain.services.remito_data_provider import InlineRemitoDataProvider
 from domain.services.remito_render_service import PlaceholderRemitoRenderer
 from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
@@ -42,6 +42,7 @@ from application.use_cases.print_jobs.create.create_print_job_use_case_interface
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
 from domain.repositories.printer_repository import PrinterRepository
 from domain.repositories.channel_repository import ChannelRepository
+from domain.repositories.template_repository import TemplateRepository
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 
@@ -87,12 +88,6 @@ def get_printer_repository() -> PrinterRepository:
 def get_channel_repository() -> ChannelRepository:
     from infrastructure.db.database import engine
     return ChannelRepository(engine)
-
-
-def get_template_repository():
-    from infrastructure.db.database import engine
-    from domain.repositories.template_repository import TemplateRepository
-    return TemplateRepository(engine)
 
 
 # Pydantic models for channels
@@ -264,6 +259,29 @@ async def print_remito_to_printer(
 
 
 @router.post(
+    "/printers/{printer_name}/print/label",
+    tags=["Printers"],
+    summary="Imprimir etiqueta (ZPL) en una impresora (CUPS)",
+    description="Genera el ZPL de la etiqueta con el body indicado (channel=3) y envía el trabajo a la impresora por nombre. Para Zebra/etiquetas la cola en CUPS debe ser raw (-m raw). Solo Linux con CUPS; en Windows responde 503.",
+)
+async def print_label_to_printer(
+    printer_name: str,
+    body: TemplateTestItem,
+    service: LabelTemplateService = Depends(get_label_template_service),
+):
+    """Envía la etiqueta (template + datos del body) a la impresora indicada como ZPL raw."""
+    try:
+        item = body.to_queue_item()
+        zpl_bytes = service.render(item)
+        job_id = print_raw_to_printer(printer_name, zpl_bytes, job_title="Etiqueta", suffix=".zpl")
+        return {"printer": printer_name, "job_id": job_id}
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
     "/templates/label/test",
     tags=["Templates"],
     summary="Probar template etiqueta (ZPL)",
@@ -390,20 +408,31 @@ async def delete_printer(
 
 
 # Channels endpoints
+def get_template_repository():
+    from infrastructure.db.database import engine
+    from domain.repositories.template_repository import TemplateRepository
+    return TemplateRepository(engine)
+
+
 @router.get(
     "/channels",
     tags=["Channels"],
     summary="Listar channels",
     description="Lista todos los channels configurados.",
 )
-async def list_channels(repo: ChannelRepository = Depends(get_channel_repository)):
+async def list_channels(
+    repo: ChannelRepository = Depends(get_channel_repository),
+    template_repo: TemplateRepository = Depends(get_template_repository),
+):
     channels = repo.get_all()
+    templates = {t.id: t.name for t in template_repo.get_all()}
     return [
         {
             "id": c.id,
             "channel_number": c.channel_number,
             "description": c.description,
             "template_id": c.template_id,
+            "template_name": templates.get(c.template_id),
             "is_active": c.is_active,
             "created_at": c.created_at.isoformat() if c.created_at else None,
         }
