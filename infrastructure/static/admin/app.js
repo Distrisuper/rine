@@ -1,9 +1,11 @@
 const API_CHANNELS = '/channels';
 const API_PRINTERS = '/printers';
 const API_PRINTERS_DISCOVER = '/printers/discover';
+const API_TEMPLATES = '/templates';
 const REFRESH_INTERVAL = 30000;
 
 let allChannels = [];
+let allTemplates = [];
 
 // Tab switching
 document.addEventListener('DOMContentLoaded', () => {
@@ -55,14 +57,16 @@ function renderChannels(channels) {
     
     tbody.innerHTML = channels.map(c => {
         const activeClass = c.is_active ? 'active' : 'inactive';
+        const templateName = allTemplates.find(t => t.id === c.template_id)?.name || '-';
         return `
             <tr class="${activeClass}">
                 <td>${c.id}</td>
                 <td><strong>${c.channel_number}</strong></td>
                 <td>${c.description || '-'}</td>
+                <td>${templateName}</td>
                 <td><span class="status-badge ${activeClass}">${c.is_active ? 'Activo' : 'Inactivo'}</span></td>
                 <td>
-                    <button onclick="editChannel(${c.id}, ${c.channel_number}, '${c.description || ''}', ${c.is_active})" class="btn-edit">Editar</button>
+                    <button onclick="editChannel(${c.id}, ${c.channel_number}, '${c.description || ''}', ${c.is_active}, ${c.template_id})" class="btn-edit">Editar</button>
                     <button onclick="deleteChannel(${c.id})" class="btn-delete">Eliminar</button>
                 </td>
             </tr>
@@ -73,7 +77,7 @@ function renderChannels(channels) {
         `Última actualización: ${new Date().toLocaleTimeString()}`;
 }
 
-function showChannelModal(id = null, channelNumber = '', description = '', isActive = true) {
+async function showChannelModal(id = null, channelNumber = '', description = '', isActive = true, templateId = null) {
     document.getElementById('channel-modal').style.display = 'flex';
     document.getElementById('channel-modal-title').textContent = id ? 'Editar Channel' : 'Nuevo Channel';
     document.getElementById('channel-id').value = id || '';
@@ -81,6 +85,29 @@ function showChannelModal(id = null, channelNumber = '', description = '', isAct
     document.getElementById('channel-description').value = description;
     document.getElementById('channel-active').checked = isActive;
     document.getElementById('channel-number').disabled = !!id;
+    
+    // Cargar templates
+    const templateSelect = document.getElementById('channel-template');
+    templateSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+    
+    try {
+        const response = await fetch(API_TEMPLATES);
+        allTemplates = await response.json();
+        allTemplates.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = t.name;
+            if (templateId && t.id === templateId) {
+                option.selected = true;
+            }
+            templateSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando templates:', error);
+    }
+    
+    // Si es nuevo, hacer required el template
+    templateSelect.required = !id;
 }
 
 function closeChannelModal() {
@@ -88,8 +115,8 @@ function closeChannelModal() {
     document.getElementById('channel-form').reset();
 }
 
-function editChannel(id, channelNumber, description, isActive) {
-    showChannelModal(id, channelNumber, description, isActive);
+function editChannel(id, channelNumber, description, isActive, templateId) {
+    showChannelModal(id, channelNumber, description, isActive, templateId);
 }
 
 async function deleteChannel(id) {
@@ -109,6 +136,7 @@ document.getElementById('channel-form').addEventListener('submit', async (e) => 
     const channelNumber = parseInt(document.getElementById('channel-number').value);
     const description = document.getElementById('channel-description').value || null;
     const isActive = document.getElementById('channel-active').checked;
+    const templateId = parseInt(document.getElementById('channel-template').value) || null;
     
     try {
         let response;
@@ -116,13 +144,13 @@ document.getElementById('channel-form').addEventListener('submit', async (e) => 
             response = await fetch(`${API_CHANNELS}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description, is_active: isActive })
+                body: JSON.stringify({ description, is_active: isActive, template_id: templateId })
             });
         } else {
             response = await fetch(API_CHANNELS, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channel_number: channelNumber, description })
+                body: JSON.stringify({ channel_number: channelNumber, description, template_id: templateId })
             });
         }
         if (!response.ok) {

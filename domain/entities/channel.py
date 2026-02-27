@@ -10,4 +10,5 @@ class Channel(SQLModel, table=True):
     channel_number: int = Field(unique=True)
     description: Optional[str] = None
     is_active: bool = True
+    template_id: Optional[int] = Field(foreign_key="templates.id", default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -21,15 +21,15 @@ class ChannelRepository:
             statement = select(Channel).where(Channel.channel_number == channel_number)
             return session.exec(statement).first()
 
-    def create(self, channel_number: int, description: str = None) -> Channel:
+    def create(self, channel_number: int, description: str = None, template_id: int = None) -> Channel:
         with Session(self.engine) as session:
-            channel = Channel(channel_number=channel_number, description=description)
+            channel = Channel(channel_number=channel_number, description=description, template_id=template_id)
             session.add(channel)
             session.commit()
             session.refresh(channel)
             return channel
 
-    def update(self, channel_id: int, description: str = None, is_active: bool = None) -> Optional[Channel]:
+    def update(self, channel_id: int, description: str = None, is_active: bool = None, template_id: int = None) -> Optional[Channel]:
         with Session(self.engine) as session:
             channel = session.get(Channel, channel_id)
             if not channel:
@@ -39,6 +39,8 @@ class ChannelRepository:
                 channel.description = description
             if is_active is not None:
                 channel.is_active = is_active
+            if template_id is not None:
+                channel.template_id = template_id
             
             session.commit()
             session.refresh(channel)

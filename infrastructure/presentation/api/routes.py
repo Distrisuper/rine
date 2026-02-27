@@ -89,15 +89,23 @@ def get_channel_repository() -> ChannelRepository:
     return ChannelRepository(engine)
 
 
+def get_template_repository():
+    from infrastructure.db.database import engine
+    from domain.repositories.template_repository import TemplateRepository
+    return TemplateRepository(engine)
+
+
 # Pydantic models for channels
 class ChannelCreate(BaseModel):
     channel_number: int
     description: Optional[str] = None
+    template_id: int
 
 
 class ChannelUpdate(BaseModel):
     description: Optional[str] = None
     is_active: Optional[bool] = None
+    template_id: Optional[int] = None
 
 
 class PrinterCreate(BaseModel):
@@ -395,6 +403,7 @@ async def list_channels(repo: ChannelRepository = Depends(get_channel_repository
             "id": c.id,
             "channel_number": c.channel_number,
             "description": c.description,
+            "template_id": c.template_id,
             "is_active": c.is_active,
             "created_at": c.created_at.isoformat() if c.created_at else None,
         }
@@ -416,12 +425,13 @@ async def create_channel(
     if existing:
         raise HTTPException(status_code=400, detail=f"Channel {body.channel_number} ya existe")
     
-    channel = repo.create(body.channel_number, body.description)
+    channel = repo.create(body.channel_number, body.description, body.template_id)
     return {
         "id": channel.id,
         "channel_number": channel.channel_number,
         "description": channel.description,
         "is_active": channel.is_active,
+        "template_id": channel.template_id,
     }
 
 
@@ -436,7 +446,7 @@ async def update_channel(
     body: ChannelUpdate,
     repo: ChannelRepository = Depends(get_channel_repository),
 ):
-    channel = repo.update(channel_id, body.description, body.is_active)
+    channel = repo.update(channel_id, body.description, body.is_active, body.template_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel no encontrado")
     return {
@@ -444,6 +454,7 @@ async def update_channel(
         "channel_number": channel.channel_number,
         "description": channel.description,
         "is_active": channel.is_active,
+        "template_id": channel.template_id,
     }
 
 
@@ -461,3 +472,23 @@ async def delete_channel(
     if not success:
         raise HTTPException(status_code=404, detail="Channel no encontrado")
     return {"status": "deleted"}
+
+
+# Templates endpoints
+@router.get(
+    "/templates",
+    tags=["Templates"],
+    summary="Listar templates",
+    description="Lista todos los templates configurados.",
+)
+async def list_templates(repo=Depends(get_template_repository)):
+    templates = repo.get_all()
+    return [
+        {
+            "id": t.id,
+            "name": t.name,
+            "file_path": t.file_path,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in templates
+    ]

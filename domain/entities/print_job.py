@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Index
+from sqlmodel import SQLModel, Field, Index, Session, select
 from datetime import datetime
 from typing import Optional
 import json
@@ -6,6 +6,9 @@ import json
 from domain.entities.document_type import get_document_type
 from domain.entities.printer_registry import PrinterRegistry, PrinterConfig
 from domain.entities.render_data import LabelRenderData, RemitoRenderData
+from domain.entities.channel import Channel
+from domain.entities.template import Template
+from infrastructure.db.database import engine
 
 
 class PrintJob(SQLModel, table=True):
@@ -34,6 +37,15 @@ class PrintJob(SQLModel, table=True):
 
     def get_printer(self) -> PrinterConfig:
         return PrinterRegistry.get_printer_for_channel(self.channel)
+
+    def get_template(self) -> Template | None:
+        with Session(engine) as session:
+            channel = session.exec(
+                select(Channel).where(Channel.channel_number == self.channel)
+            ).first()
+            if not channel or not channel.template_id:
+                return None
+            return session.get(Template, channel.template_id)
 
     def get_render_data(self) -> LabelRenderData | RemitoRenderData:
         data = json.loads(self.payload)
@@ -71,20 +83,35 @@ class PrintJob(SQLModel, table=True):
         raise ValueError(f"Tipo de documento no soportado: {self.channel}")
 
     def render(self) -> bytes:
+        template = self.get_template()
+        if not template:
+            raise ValueError(f"No hay template configurado para channel {self.channel}")
+
         if self.channel == 3:
-            return self._render_label(self.get_render_data())
+            return self._render_label(self.get_render_data(), template.file_path)
         else:
-            return self._render_remito(self.get_render_data())
+            return self._render_remito(self.get_render_data(), template.file_path)
 
-    def _render_label(self, data: LabelRenderData) -> bytes:
-        return f"""^XA
-^FO50,50^A0N,30,30^FD{data.to}^FS
-^FO50,90^A0N,25,25^FD{data.address}^FS
-^FO50,130^A0N,25,25^FD{data.city}^FS
-^FO50,170^A0N,25,25^FD{data.packages}^FS
-^XZ""".encode("utf-8")
+    def _render_label(self, data: LabelRenderData, file_path: str) -> bytes:
+        from jinja2 import Template
+        from pathlib import Path
 
-    def _render_remito(self, data: RemitoRenderData) -> bytes:
+        template_path = Path(f"/app/templates/{file_path}")
+        if not template_path.exists():
+            raise FileNotFoundError(f"Template ZPL no encontrado: {file_path}")
+
+        with open(template_path) as f:
+            template = Template(f.read())
+
+        zpl = template.render(
+            to=data.to,
+            address=data.address,
+            city=data.city,
+            packages=data.packages,
+        )
+        return zpl.encode("utf-8")
+
+    def _render_remito(self, data: RemitoRenderData, file_path: str) -> bytes:
         from pathlib import Path
         from jinja2 import Template
         from weasyprint import HTML
@@ -92,7 +119,7 @@ class PrintJob(SQLModel, table=True):
 
         barcode_service = BarcodeService()
 
-        template_path = Path("/app/templates/remitos/base_remito.html")
+        template_path = Path(f"/app/templates/{file_path}")
         if not template_path.exists():
             return self._placeholder_pdf()
 

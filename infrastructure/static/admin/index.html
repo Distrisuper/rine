@@ -35,12 +35,13 @@
                         <th>ID</th>
                         <th>Channel</th>
                         <th>Descripción</th>
+                        <th>Template</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="channels-body">
-                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
+                    <tr><td colspan="6" class="loading">Cargando...</td></tr>
                 </tbody>
             </table>
         </section>
@@ -80,6 +81,12 @@
                 <div class="form-group">
                     <label>Descripción</label>
                     <input type="text" id="channel-description">
+                </div>
+                <div class="form-group">
+                    <label>Template</label>
+                    <select id="channel-template" required>
+                        <option value="">-- Seleccionar --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>
