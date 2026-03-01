@@ -9,14 +9,25 @@ from application.use_cases.printer.discover.discover_printer_use_case import Dis
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
 from application.use_cases.printer.get_status.get_status_use_case import GetStatusUseCase
 from application.use_cases.template.render_label.render_label_use_case import RenderLabelUseCase
+from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
 from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
 from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
 from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
 from infrastructure.controllers.template.label_preview.label_preview_controller import LabelPreviewController
+from infrastructure.controllers.hello.hello_get_controller import HelloGetController
+from infrastructure.controllers.health.health_controller import HealthController
+from infrastructure.controllers.template.remito_preview.remito_preview_controller import RemitoPreviewController
+from application.use_cases.template.preview_remito.preview_remito_use_case import PreviewRemitoUseCase
+from infrastructure.controllers.health.health_controller import HealthController
+from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
 from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
-
+from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
 
 class Container:
+    # Hello
+
     # Hello
     @lru_cache
     def init_hello_controller(self) -> HelloGetController:
@@ -53,14 +64,14 @@ class Container:
     def create_print_job_controller(self) -> CreatePrintJobController:
         return self.init_create_print_job_controller()
 
-    # Print
-    @lru_cache
-    def init_print_job_controller(self) -> PrintJobController:
-        use_case = PrintJobUseCase()
-        return PrintJobController(use_case)
+    # # Print
+    # @lru_cache
+    # def init_print_job_controller(self) -> PrintJobController:
+    #     use_case = PrintJobUseCase()
+    #     return PrintJobController(use_case)
 
-    def print_job_controller(self) -> PrintJobController:
-        return self.init_print_job_controller()
+    # def print_job_controller(self) -> PrintJobController:
+    #     return self.init_print_job_controller()
 
     # Printer - Discover
     @lru_cache
@@ -102,6 +113,33 @@ class Container:
 
     def label_preview_controller(self) -> LabelPreviewController:
         return self.init_label_preview_controller()
+
+    # Template - Remito Preview
+    @lru_cache
+    def init_remito_preview_controller(self) -> RemitoPreviewController:
+        from domain.services.remito_template_service import RemitoTemplateService
+        from domain.services.barcode_service import BarcodeService
+        from domain.services.remito_data_provider import InlineRemitoDataProvider
+        from domain.services.remito_render_service import PlaceholderRemitoRenderer
+        from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
+        try:
+            from infrastructure.html_remito_render_service import HtmlRemitoRenderer
+            # from domain.services.barcode_service import BarcodeService
+            barcode_service = BarcodeService()
+            renderer = HtmlRemitoRenderer(barcode_service)
+        except ImportError:
+            renderer = PlaceholderRemitoRenderer()
+        template_service = RemitoTemplateService(
+            renderer=renderer,
+            resolver=LegacyRemitoTemplateResolver(),
+            data_provider=InlineRemitoDataProvider(),
+        )
+        from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
+        use_case = RenderRemitoUseCase(template_service)
+        return RemitoPreviewController(use_case)
+
+    def remito_preview_controller(self) -> RemitoPreviewController:
+        return self.init_remito_preview_controller()
 
 
 container = Container()

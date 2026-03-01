@@ -29,7 +29,7 @@ class PrinterRepository:
         with Session(self.engine) as session:
             return session.get(Printer, printer_id)
 
-    def create_printer(self, name: str, channel_ids: list[int] = None) -> dict:
+    def create_printer(self, name: str, channel_ids: list[int] = []) -> dict:
         with Session(self.engine) as session:
             printer = Printer(name=name)
             session.add(printer)
@@ -54,16 +54,16 @@ class PrinterRepository:
             return {
                 "id": printer_id,
                 "name": printer_name,
-                "channels": self.get_printer_channels(printer_id),
+                "channels": self.get_printer_channels(printer_id) if printer_id > 0 else [],
             }
 
-    def update_printer(self, printer_id: int, name: str = None, is_active: bool = None) -> Optional[dict]:
+    def update_printer(self, printer_id: int, name: str = '', is_active: Optional[bool] = None) -> Optional[dict]:
         with Session(self.engine) as session:
             printer = session.get(Printer, printer_id)
             if not printer:
                 return None
             
-            if name is not None:
+            if name is not None and name != '':
                 printer.name = name
             if is_active is not None:
                 printer.is_active = is_active
@@ -74,7 +74,7 @@ class PrinterRepository:
                 "id": printer.id,
                 "name": printer.name,
                 "is_active": printer.is_active,
-                "channels": self.get_printer_channels(printer_id),
+                "channels": self.get_printer_channels(printer_id) if printer_id > 0 else [],
             }
 
     def set_printer_channels(self, printer_id: int, channel_ids: list[int]) -> bool:
@@ -104,6 +104,8 @@ class PrinterRepository:
             return True
 
     def get_printer_channels(self, printer_id: int) -> list[dict]:
+        if printer_id <= 0:
+            raise ValueError("printer_id debe ser un entero positivo")
         with Session(self.engine) as session:
             statement = (
                 select(PrinterChannel, Channel)

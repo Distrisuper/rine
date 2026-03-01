@@ -8,7 +8,6 @@ from fastapi.responses import JSONResponse, Response
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.health.health_controller import HealthController
-from infrastructure.controllers.template.render_remito_controller import RenderRemitoController
 from infrastructure.controllers.template.label_preview.label_preview_controller import LabelPreviewController
 from domain.services.printer_discovery import PrinterDiscovery
 from domain.entities.models import TemplateTestItem
@@ -35,7 +34,7 @@ from application.use_cases.printer.discover.discover_printer_use_case_interface 
 from application.use_cases.printer.discover.discover_printer_use_case import DiscoverPrinterUseCase
 from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
 from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
-from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
+from application.use_cases.template.preview_remito.preview_remito_use_case import PreviewRemitoUseCase
 from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
 from application.use_cases.template.render_label.render_label_use_case import RenderLabelUseCase
 from application.use_cases.print_jobs.create.create_print_job_use_case import CreatePrintJobUseCase
@@ -59,6 +58,7 @@ from infrastructure.dtos.printer.get_one_status_by_name.request import GetOneSta
 from infrastructure.dtos.printer.get_one_status_by_name.response import GetOneStatusByNameResponseDTO
 from infrastructure.dtos.printer.get_status.response import GetStatusResponseDTO
 from infrastructure.dtos.template.label_preview.request import LabelPreviewRequestDTO
+from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO
 
 # Use Cases
 from application.use_cases.channels.create.create_channel_use_case import CreateChannelUseCase
@@ -67,6 +67,7 @@ from application.use_cases.channels.create.create_channel_use_case_interface imp
 # Controllers
 from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
 from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
+from infrastructure.controllers.template.remito_preview.remito_preview_controller import RemitoPreviewController
 from infrastructure.api.container import container
 from domain.repositories.template_repository import TemplateRepository
 from pydantic import BaseModel
@@ -77,13 +78,10 @@ from sqlmodel import select, and_, desc
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-logger = logging.getLogger(__name__)
 
 
-def get_printer_discovery() -> PrinterDiscovery:
-    """Dependencia: implementación por defecto (CUPS o mock)."""
-    from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
-    return CupsPrinterDiscoveryService()
+
+
 
 
 def get_printer_repository() -> PrinterRepository:
@@ -126,12 +124,6 @@ def get_label_template_service() -> LabelTemplateService:
         data_provider=InlineLabelDataProvider(),
         renderer=PlaceholderLabelRenderer(),
     )
-
-
-def get_render_remito_controller() -> RenderRemitoController:
-    template_service = get_remito_template_service()
-    use_case = RenderRemitoUseCase(template_service)
-    return RenderRemitoController(use_case)
 
 
 class CreatePrintJobRequest(BaseModel):
@@ -177,31 +169,18 @@ async def printer_status(
 
 
 @router.post(
-    "/templates/remito/test",
+    "/templates/remito/preview",
     tags=["Templates"],
-    summary="Probar template remito (PDF)",
-    description="Genera un PDF de remito con datos mock. Body: channel (4 u 8), location, opcional extra_data, server, ds. Si format=json devuelve JSON con content_base64 para inspeccionar.",
+    summary="Preview template remito (PDF)",
+    description="Genera un PDF de remito para preview.",
     response_class=Response,
 )
-async def template_remito_test(
-    body: TemplateTestItem,
-    controller: RenderRemitoController = Depends(get_render_remito_controller),
-    format: str = Query("binary", description="binary (PDF) o json (base64 para debug)"),
+async def remito_preview(
+    body: RemitoPreviewRequestDTO,
+    format: str = Query("binary", description="binary (PDF) o json (base64)"),
+    controller: RemitoPreviewController = Depends(container.remito_preview_controller),
 ):
-    try:
-        response = controller(body)
-        if format == "json":
-            return JSONResponse(content={
-                "content_type": "application/pdf",
-                "size": len(response.body),
-                "content_base64": base64.b64encode(response.body).decode("ascii"),
-            })
-        return response
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.exception("Error generando PDF remito: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+    return controller(body, format=format)
 
 
 @router.post(
@@ -282,21 +261,6 @@ async def create_print_job(
         client_name=body.client_name,
         payload=body.payload,
     )
-
-
-class PrintJobResponse(BaseModel):
-    id: int
-    client_code: str
-    client_name: str
-    channel: int
-    status: str
-    print_count: int
-    print_type: Optional[str]
-    date_created: datetime
-    date_started: Optional[datetime]
-    date_processed: Optional[datetime]
-    printer_name: Optional[str]
-    error_message: Optional[str]
 
 
 @router.get(
