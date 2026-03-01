@@ -1,8 +1,8 @@
 from application.use_cases.channels.delete.delete_channel_use_case_interface import DeleteChannelUseCaseInterface
-from domain.repositories.channel_repository import ChannelRepository
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
 
 class DeleteChannelUseCase(DeleteChannelUseCaseInterface):
-    def __init__(self, repo: ChannelRepository):
+    def __init__(self, repo: ChannelRepositoryInterface):
         self._repo = repo
 
     def __call__(self, channel_id: int) -> bool:

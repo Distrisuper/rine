@@ -45,11 +45,11 @@ from infrastructure.controllers.printer.test.test_printer_controller import Test
 # Infrastructure Services
 from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
 
-# Repositories
-from domain.repositories.printer_repository import PrinterRepository
-from domain.repositories.channel_repository import ChannelRepository
-from domain.repositories.template_repository import TemplateRepository
-from domain.repositories.print_job_repository import PrintJobRepository
+# Repositories (Infrastructure implementations)
+from infrastructure.repositories.printer_repository import PrinterRepository
+from infrastructure.repositories.channel_repository import ChannelRepository
+from infrastructure.repositories.template_repository import TemplateRepository
+from infrastructure.repositories.print_job_repository import PrintJobRepository
 
 class Container:
     # Hello
@@ -228,12 +228,20 @@ class Container:
         from domain.services.label_template_service import LabelTemplateService
         from domain.services.label_render_service import PlaceholderLabelRenderer
         from domain.services.label_template_resolver import LegacyLabelTemplateResolver
+        from infrastructure.db.database import engine
+        
+        channel_repo = ChannelRepository(engine)
+        template_repo = TemplateRepository(engine)
         
         template_service = LabelTemplateService(
             resolver=LegacyLabelTemplateResolver(),
             renderer=PlaceholderLabelRenderer()
         )
-        use_case = PreviewLabelUseCase(template_service)
+        use_case = PreviewLabelUseCase(
+            template_service=template_service,
+            channel_repo=channel_repo,
+            template_repo=template_repo
+        )
         return PreviewLabelController(use_case)
 
     def preview_label_controller(self) -> PreviewLabelController:
@@ -246,6 +254,11 @@ class Container:
         from infrastructure.services.barcode_service import BarcodeService
         from domain.services.remito_render_service import PlaceholderRemitoRenderer
         from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
+        from infrastructure.db.database import engine
+        
+        channel_repo = ChannelRepository(engine)
+        template_repo = TemplateRepository(engine)
+        
         try:
             from infrastructure.html_remito_render_service import HtmlRemitoRenderer
             barcode_service = BarcodeService()
@@ -257,7 +270,11 @@ class Container:
             renderer=renderer,
             resolver=LegacyRemitoTemplateResolver(),
         )
-        use_case = PreviewRemitoUseCase(template_service)
+        use_case = PreviewRemitoUseCase(
+            template_service=template_service,
+            channel_repo=channel_repo,
+            template_repo=template_repo
+        )
         return PreviewRemitoController(use_case)
 
     def remito_preview_controller(self) -> PreviewRemitoController:

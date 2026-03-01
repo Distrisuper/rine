@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Optional, Tuple, List
 from application.use_cases.print_jobs.get_all.list_print_jobs_use_case_interface import ListPrintJobsUseCaseInterface
-from domain.repositories.print_job_repository import PrintJobRepository
+from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
 
 class ListPrintJobsUseCase(ListPrintJobsUseCaseInterface):
-    def __init__(self, repo: PrintJobRepository):
+    def __init__(self, repo: PrintJobRepositoryInterface):
         self._repo = repo
 
     def __call__(

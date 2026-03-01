@@ -1,9 +1,9 @@
 from typing import List
 from application.use_cases.template.get_all.list_templates_use_case_interface import ListTemplatesUseCaseInterface
-from domain.repositories.template_repository import TemplateRepository
+from domain.repositories.template_repository_interface import TemplateRepositoryInterface
 
 class ListTemplatesUseCase(ListTemplatesUseCaseInterface):
-    def __init__(self, repo: TemplateRepository):
+    def __init__(self, repo: TemplateRepositoryInterface):
         self._repo = repo
 
     def __call__(self) -> List[dict]:

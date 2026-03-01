@@ -1,13 +1,13 @@
 from application.use_cases.template.preview_remito.preview_remito_use_case_interface import PreviewRemitoUseCaseInterface
-from domain.repositories.channel_repository import ChannelRepository
-from domain.repositories.template_repository import TemplateRepository
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
+from domain.repositories.template_repository_interface import TemplateRepositoryInterface
 
 class PreviewRemitoUseCase(PreviewRemitoUseCaseInterface):
     def __init__(
         self,
         template_service,
-        channel_repo: ChannelRepository,
-        template_repo: TemplateRepository
+        channel_repo: ChannelRepositoryInterface,
+        template_repo: TemplateRepositoryInterface
     ):
         self._template_service = template_service
         self._channel_repo = channel_repo

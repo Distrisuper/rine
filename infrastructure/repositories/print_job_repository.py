@@ -2,8 +2,9 @@ from sqlmodel import Session, select, and_, desc, func
 from datetime import datetime
 from typing import List, Optional, Tuple
 from domain.entities.print_job import PrintJob
+from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
 
-class PrintJobRepository:
+class PrintJobRepository(PrintJobRepositoryInterface):
     def __init__(self, engine):
         self.engine = engine
 
@@ -17,6 +18,13 @@ class PrintJobRepository:
     def get_by_id(self, job_id: int) -> Optional[PrintJob]:
         with Session(self.engine) as session:
             return session.get(PrintJob, job_id)
+
+    def update(self, job: PrintJob) -> PrintJob:
+        with Session(self.engine) as session:
+            session.add(job)
+            session.commit()
+            session.refresh(job)
+            return job
 
     def get_all(
         self,

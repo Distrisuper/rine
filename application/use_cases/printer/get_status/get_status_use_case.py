@@ -1,8 +1,9 @@
+from domain.services.printer_discovery import PrinterDiscovery
 from application.use_cases.printer.get_status.get_status_use_case_interface import GetStatusUseCaseInterface
 
 
 class GetStatusUseCase(GetStatusUseCaseInterface):
-    def __init__(self, discovery):
+    def __init__(self, discovery: PrinterDiscovery):
         self._discovery = discovery
 
     def __call__(self) -> dict:

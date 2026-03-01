@@ -2,19 +2,19 @@ import json
 import random
 from typing import Any, Dict
 from application.use_cases.printer.test.test_printer_use_case_interface import TestPrinterUseCaseInterface
-from domain.repositories.printer_repository import PrinterRepository
-from domain.repositories.channel_repository import ChannelRepository
-from domain.repositories.template_repository import TemplateRepository
-from domain.repositories.print_job_repository import PrintJobRepository
+from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
+from domain.repositories.template_repository_interface import TemplateRepositoryInterface
+from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
 from domain.entities.print_job import PrintJob
 
 class TestPrinterUseCase(TestPrinterUseCaseInterface):
     def __init__(
         self,
-        printer_repo: PrinterRepository,
-        channel_repo: ChannelRepository,
-        template_repo: TemplateRepository,
-        print_job_repo: PrintJobRepository
+        printer_repo: PrinterRepositoryInterface,
+        channel_repo: ChannelRepositoryInterface,
+        template_repo: TemplateRepositoryInterface,
+        print_job_repo: PrintJobRepositoryInterface
     ):
         self._printer_repo = printer_repo
         self._channel_repo = channel_repo

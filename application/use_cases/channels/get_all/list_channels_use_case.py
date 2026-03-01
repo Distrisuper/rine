@@ -1,10 +1,10 @@
 from typing import List
 from application.use_cases.channels.get_all.list_channels_use_case_interface import ListChannelsUseCaseInterface
-from domain.repositories.channel_repository import ChannelRepository
-from domain.repositories.template_repository import TemplateRepository
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
+from domain.repositories.template_repository_interface import TemplateRepositoryInterface
 
 class ListChannelsUseCase(ListChannelsUseCaseInterface):
-    def __init__(self, channel_repo: ChannelRepository, template_repo: TemplateRepository):
+    def __init__(self, channel_repo: ChannelRepositoryInterface, template_repo: TemplateRepositoryInterface):
         self._channel_repo = channel_repo
         self._template_repo = template_repo
 

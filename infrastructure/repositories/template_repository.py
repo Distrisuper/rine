@@ -1,14 +1,15 @@
 from sqlmodel import Session, select
-from typing import Optional
+from typing import Optional, List
 
 from domain.entities.template import Template
+from domain.repositories.template_repository_interface import TemplateRepositoryInterface
 
 
-class TemplateRepository:
+class TemplateRepository(TemplateRepositoryInterface):
     def __init__(self, engine):
         self.engine = engine
 
-    def get_all(self) -> list[Template]:
+    def get_all(self) -> List[Template]:
         with Session(self.engine) as session:
             return list(session.exec(select(Template)).all())
 

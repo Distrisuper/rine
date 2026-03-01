@@ -1,9 +1,9 @@
 from typing import List, Optional
 from application.use_cases.printer.update.update_printer_use_case_interface import UpdatePrinterUseCaseInterface
-from domain.repositories.printer_repository import PrinterRepository
+from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
 
 class UpdatePrinterUseCase(UpdatePrinterUseCaseInterface):
-    def __init__(self, repo: PrinterRepository):
+    def __init__(self, repo: PrinterRepositoryInterface):
         self._repo = repo
 
     def __call__(self, printer_id: int, name: str = '', is_active: Optional[bool] = None, channel_ids: Optional[List[int]] = None) -> dict:

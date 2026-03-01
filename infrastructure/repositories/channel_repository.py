@@ -1,14 +1,15 @@
 from sqlmodel import Session, select
-from typing import Optional
+from typing import Optional, List
 
 from domain.entities.channel import Channel
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
 
 
-class ChannelRepository:
+class ChannelRepository(ChannelRepositoryInterface):
     def __init__(self, engine):
         self.engine = engine
 
-    def get_all(self) -> list[Channel]:
+    def get_all(self) -> List[Channel]:
         with Session(self.engine) as session:
             return list(session.exec(select(Channel).order_by(Channel.channel_number)).all())
 

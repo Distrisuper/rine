@@ -4,9 +4,10 @@ from typing import Optional
 from domain.entities.printer import Printer, PrinterChannel
 from domain.entities.channel import Channel
 from domain.value_objects import PrinterConfig
+from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
 
 
-class PrinterRepository:
+class PrinterRepository(PrinterRepositoryInterface):
     def __init__(self, engine):
         self.engine = engine
 

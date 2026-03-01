@@ -1,10 +1,10 @@
 from application.use_cases.channels.create.create_channel_use_case_interface import (
     CreateChannelUseCaseInterface,
 )
-from domain.repositories.channel_repository import ChannelRepository
+from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
 
 class CreateChannelUseCase(CreateChannelUseCaseInterface):
-    def __init__(self, repo: ChannelRepository):
+    def __init__(self, repo: ChannelRepositoryInterface):
         self._repo = repo
 
     def __call__(self, channel_number: int, description: str | None, template_id: int) -> dict:

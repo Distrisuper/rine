@@ -4,10 +4,10 @@ from application.use_cases.print_jobs.create.create_print_job_use_case_interface
     CreatePrintJobUseCaseInterface,
 )
 from domain.entities.print_job import PrintJob
-from domain.repositories.print_job_repository import PrintJobRepository
+from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
 
 class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
-    def __init__(self, repo: PrintJobRepository):
+    def __init__(self, repo: PrintJobRepositoryInterface):
         self._repo = repo
 
     def __call__(

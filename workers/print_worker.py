@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from sqlmodel import Session, select
 
 from domain.entities.print_job import PrintJob
-from domain.repositories.printer_repository import PrinterRepository
+from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
+from infrastructure.repositories.printer_repository import PrinterRepository
 from application.use_cases.print_jobs.print.print_job_use_case import PrintJobUseCase
 
 logging.basicConfig(
@@ -22,7 +23,7 @@ class PrintWorker:
 
     def __init__(self, engine):
         self.engine = engine
-        self.printer_repo = PrinterRepository(engine)
+        self.printer_repo: PrinterRepositoryInterface = PrinterRepository(engine)
         self.print_use_case = PrintJobUseCase()
 
     def run_forever(self):
