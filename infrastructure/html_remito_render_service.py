@@ -1,6 +1,6 @@
 """
 Render de remito desde template HTML (Jinja2) + CSS → PDF con WeasyPrint.
-El formato se edita en app/templates/remitos/base_remito.html y remito.css.
+El formato se edita en infrastructure/templates/remitos/base_remito.html y remito.css.
 """
 import base64
 from io import BytesIO
@@ -17,10 +17,12 @@ from domain.services.barcode_service_interface import BarcodeServiceInterface
 def _logo_data_url(templates_dir: Path) -> str | None:
     """
     Si existe logo.png o logo.svg en la carpeta de templates, lo lee y devuelve
-    un data URL (base64) para el <img>. Así WeasyPrint lo carga siempre (también en Docker).
+    un data URL (base64) para el <img>.
     """
+    # Buscamos el logo en la subcarpeta remitos de la raíz de templates
+    remitos_dir = templates_dir / "remitos"
     for name in ("logo.png", "logo.svg"):
-        path = templates_dir / name
+        path = remitos_dir / name
         if not path.exists():
             continue
         try:
@@ -62,8 +64,7 @@ def _data_to_context(data: RemitoRenderData, barcode_service: BarcodeServiceInte
 class HtmlRemitoRenderer(RemitoRenderer):
     """
     Genera PDF desde HTML + CSS.
-    Busca templates en app/templates/remitos/; por defecto usa base_remito.html.
-    Requiere weasyprint instalado; si no está, instanciar falla (usar PlaceholderRemitoRenderer).
+    Busca templates en infrastructure/templates/ usando rutas relativas (ej: 'remitos/base_remito.html').
     """
 
     def __init__(
@@ -73,27 +74,33 @@ class HtmlRemitoRenderer(RemitoRenderer):
     ):
         self._barcode_service = barcode_service
         if templates_dir is None:
-            templates_dir = Path(__file__).resolve().parent.parent / "templates" / "remitos"
+            # Apuntamos a infrastructure/templates/ como raíz
+            templates_dir = Path(__file__).resolve().parent / "templates"
         self._templates_dir = Path(templates_dir)
         self._env = Environment(
             loader=FileSystemLoader(str(self._templates_dir)),
             autoescape=select_autoescape(("html",)),
         )
 
-    def _template_name(self, template_id: str) -> str:
-        """Mapea template_id a nombre de archivo; por defecto base_remito.html."""
-        candidate = f"{template_id}.html"
-        if (self._templates_dir / candidate).exists():
-            return candidate
-        return "base_remito.html"
+    def _get_safe_template_path(self, template_path: str) -> str:
+        """Verifica si el path existe, si no devuelve el default."""
+        if (self._templates_dir / template_path).exists():
+            return template_path
+        return "remitos/base_remito.html"
 
     def render(self, template_id: str, data: RemitoRenderData) -> bytes:
-        template = self._env.get_template(self._template_name(template_id))
+        # template_id aquí actúa como el path relativo guardado en DB
+        template_path = self._get_safe_template_path(template_id)
+        template = self._env.get_template(template_path)
+        
         context = _data_to_context(data, self._barcode_service)
         context["logo_data_url"] = _logo_data_url(self._templates_dir)
         html_string = template.render(**context)
 
-        base_url = self._templates_dir.as_uri() + "/"
+        # La base_url para assets (CSS, etc) debe ser relativa a la carpeta del template
+        current_template_dir = (self._templates_dir / template_path).parent
+        base_url = current_template_dir.as_uri() + "/"
+        
         pdf_doc = HTML(string=html_string, base_url=base_url)
         buffer = BytesIO()
         pdf_doc.write_pdf(buffer)

@@ -1,6 +1,7 @@
 from application.use_cases.template.preview_label.preview_label_use_case_interface import PreviewLabelUseCaseInterface
 from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
 from domain.repositories.template_repository_interface import TemplateRepositoryInterface
+from domain.value_objects.queue_item import QueueItem
 
 class PreviewLabelUseCase(PreviewLabelUseCaseInterface):
     def __init__(
@@ -26,5 +27,34 @@ class PreviewLabelUseCase(PreviewLabelUseCaseInterface):
         if not template or not template.file_path.lower().endswith(".zpl"):
             raise ValueError(f"El canal {body.channel} no está configurado con una plantilla de etiquetas (.zpl)")
         
-        item = body.to_queue_item()
+        # Mapeo manual de DTO a QueueItem
+        item = QueueItem(
+            id=0,
+            client_id="",
+            client_code=body.client_code,
+            client_name=body.client_name,
+            order_number=body.order_number,
+            type="PREVIEW",
+            type_code=0,
+            location=body.location,
+            channel=body.channel,
+            invoice_type="",
+            invoice_number=0,
+            invoice_comment="",
+            invoice_total=body.invoice_total,
+            result=0,
+            result_detail="",
+            retry=0,
+            priority=0,
+            printed=0,
+            print_count=0,
+            host=0,
+            redi_code="",
+            redi_id=body.redi_id,
+            date_created="",
+            extra_data=body.extra_data,
+            server=body.server,
+            ds=body.ds
+        )
+        
         return self._template_service.render(item)
