@@ -1,7 +1,6 @@
-"""Tests del parser de extra_data y del modelo ExtraDataRemito."""
+"""Tests del modelo ExtraDataRemito."""
 import unittest
-from domain.entities.models import ExtraDataRemito
-from domain.services.extra_data_parser import DefaultExtraDataParser
+from domain.value_objects import ExtraDataRemito
 
 
 class TestExtraDataRemitoFromJson(unittest.TestCase):
@@ -26,17 +25,3 @@ class TestExtraDataRemitoFromJson(unittest.TestCase):
 
     def test_non_dict_json_returns_none(self):
         self.assertIsNone(ExtraDataRemito.from_json("[]"))
-
-
-class TestDefaultExtraDataParser(unittest.TestCase):
-    def setUp(self):
-        self.parser = DefaultExtraDataParser()
-
-    def test_parse_delegates_to_model(self):
-        raw = '{"label_to": "Test"}'
-        result = self.parser.parse(raw)
-        self.assertIsNotNone(result)
-        self.assertEqual(result.label_to, "Test")
-
-    def test_parse_none_returns_none(self):
-        self.assertIsNone(self.parser.parse(None))

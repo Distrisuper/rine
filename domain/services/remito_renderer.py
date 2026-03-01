@@ -1,7 +1,7 @@
 """Interfaz para renderizar remito (template + datos → PDF)."""
 from abc import ABC, abstractmethod
 
-from domain.entities.models import RemitoRenderData
+from domain.value_objects import RemitoRenderData
 
 
 class RemitoRenderer(ABC):

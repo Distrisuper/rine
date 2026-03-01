@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from weasyprint import HTML
 
 from domain.services.remito_renderer import RemitoRenderer
-from domain.entities.models import RemitoRenderData
+from domain.value_objects import RemitoRenderData
 from domain.services.barcode_service_interface import BarcodeServiceInterface
 
 

@@ -27,8 +27,11 @@ from infrastructure.api.container import container
 
 # DTOs
 from infrastructure.dtos.channels.create.request import CreateChannelRequestDTO
+from infrastructure.dtos.channels.create.response import CreateChannelResponseDTO
 from infrastructure.dtos.channels.update.request import UpdateChannelRequestDTO
-from infrastructure.dtos.channels.response import ChannelResponseDTO
+from infrastructure.dtos.channels.update.response import UpdateChannelResponseDTO
+from infrastructure.dtos.channels.get_all.response import ListChannelResponseDTO
+from infrastructure.dtos.channels.delete.response import DeleteChannelResponseDTO
 from infrastructure.dtos.printers.create.request import CreatePrinterRequestDTO
 from infrastructure.dtos.printers.update.request import UpdatePrinterRequestDTO
 from infrastructure.dtos.printers.response import PrinterResponseDTO
@@ -214,16 +217,12 @@ async def update_printer(
     body: UpdatePrinterRequestDTO,
     controller: UpdatePrinterController = Depends(container.update_printer_controller),
 ):
-    printer = controller(
+    return controller(
         printer_id=printer_id,
         name=body.name,
         is_active=body.is_active,
         channel_ids=body.channel_ids,
     )
-    if not printer:
-        raise HTTPException(status_code=404, detail="Impresora no encontrada")
-    
-    return printer
 
 
 @router.delete(
@@ -236,10 +235,7 @@ async def delete_printer(
     printer_id: int,
     controller: DeletePrinterController = Depends(container.delete_printer_controller),
 ):
-    success = controller(printer_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Impresora no encontrada")
-    return {"status": "deleted"}
+    return controller(printer_id)
 
 
 @router.post(
@@ -261,7 +257,7 @@ async def test_printer(
     tags=["Channels"],
     summary="Listar channels",
     description="Lista todos los channels configurados.",
-    response_model=List[ChannelResponseDTO],
+    response_model=List[ListChannelResponseDTO],
 )
 async def list_channels(
     controller: ListChannelsController = Depends(container.list_channels_controller),
@@ -274,7 +270,7 @@ async def list_channels(
     tags=["Channels"],
     summary="Crear channel",
     description="Crea un nuevo channel.",
-    response_model=ChannelResponseDTO,
+    response_model=CreateChannelResponseDTO,
 )
 async def create_channel(
     body: CreateChannelRequestDTO,
@@ -292,22 +288,19 @@ async def create_channel(
     tags=["Channels"],
     summary="Editar channel",
     description="Edita la descripción o estado de un channel.",
-    response_model=ChannelResponseDTO,
+    response_model=UpdateChannelResponseDTO,
 )
 async def update_channel(
     channel_id: int,
     body: UpdateChannelRequestDTO,
     controller: UpdateChannelController = Depends(container.update_channel_controller),
 ):
-    channel = controller(
+    return controller(
         channel_id=channel_id,
         description=body.description,
         is_active=body.is_active,
         template_id=body.template_id,
     )
-    if not channel:
-        raise HTTPException(status_code=404, detail="Channel no encontrado")
-    return channel
 
 
 @router.delete(
@@ -315,15 +308,13 @@ async def update_channel(
     tags=["Channels"],
     summary="Eliminar channel",
     description="Elimina un channel.",
+    response_model=DeleteChannelResponseDTO,
 )
 async def delete_channel(
     channel_id: int,
     controller: DeleteChannelController = Depends(container.delete_channel_controller),
 ):
-    success = controller(channel_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Channel no encontrado")
-    return {"status": "deleted"}
+    return controller(channel_id)
 
 
 # Templates endpoints

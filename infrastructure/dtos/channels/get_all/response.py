@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
-class ChannelResponseDTO(BaseModel):
+class ListChannelResponseDTO(BaseModel):
     id: int
     channel_number: int
     description: Optional[str] = None

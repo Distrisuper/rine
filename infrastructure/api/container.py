@@ -226,7 +226,13 @@ class Container:
     @lru_cache
     def init_preview_label_controller(self) -> PreviewLabelController:
         from domain.services.label_template_service import LabelTemplateService
-        template_service = LabelTemplateService()
+        from domain.services.label_render_service import PlaceholderLabelRenderer
+        from domain.services.label_template_resolver import LegacyLabelTemplateResolver
+        
+        template_service = LabelTemplateService(
+            resolver=LegacyLabelTemplateResolver(),
+            renderer=PlaceholderLabelRenderer()
+        )
         use_case = PreviewLabelUseCase(template_service)
         return PreviewLabelController(use_case)
 
@@ -238,7 +244,6 @@ class Container:
     def init_remito_preview_controller(self) -> PreviewRemitoController:
         from domain.services.remito_template_service import RemitoTemplateService
         from infrastructure.services.barcode_service import BarcodeService
-        from domain.services.remito_data_provider import InlineRemitoDataProvider
         from domain.services.remito_render_service import PlaceholderRemitoRenderer
         from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
         try:
@@ -247,10 +252,10 @@ class Container:
             renderer = HtmlRemitoRenderer(barcode_service)
         except ImportError:
             renderer = PlaceholderRemitoRenderer()
+            
         template_service = RemitoTemplateService(
             renderer=renderer,
             resolver=LegacyRemitoTemplateResolver(),
-            data_provider=InlineRemitoDataProvider(),
         )
         use_case = PreviewRemitoUseCase(template_service)
         return PreviewRemitoController(use_case)

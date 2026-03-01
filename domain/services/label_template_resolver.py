@@ -1,7 +1,7 @@
 """Interfaz para resolver el template de etiqueta/rótulo según channel."""
 from abc import ABC, abstractmethod
 
-from domain.entities.models import ResolvedTemplate
+from domain.value_objects import ResolvedTemplate
 
 
 class LabelTemplateResolver(ABC):

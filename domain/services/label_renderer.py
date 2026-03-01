@@ -1,7 +1,7 @@
 """Interfaz para renderizar etiqueta/rótulo (template + datos → ZPL)."""
 from abc import ABC, abstractmethod
 
-from domain.entities.models import LabelRenderData
+from domain.value_objects import LabelRenderData
 
 
 class LabelRenderer(ABC):

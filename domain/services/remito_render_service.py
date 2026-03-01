@@ -3,7 +3,7 @@ Render de remito: template_id + RemitoRenderData → PDF.
 Placeholder: genera un PDF con texto visible para pruebas; reemplazar por WeasyPrint/Jinja2.
 """
 from domain.services.remito_renderer import RemitoRenderer
-from domain.entities.models import RemitoRenderData
+from domain.value_objects import RemitoRenderData
 
 
 def _escape_pdf_string(s: str) -> str:

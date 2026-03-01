@@ -6,4 +6,7 @@ class DeletePrinterUseCase(DeletePrinterUseCaseInterface):
         self._repo = repo
 
     def __call__(self, printer_id: int) -> bool:
-        return self._repo.delete_printer(printer_id)
+        success = self._repo.delete_printer(printer_id)
+        if not success:
+            raise ValueError("Impresora no encontrada")
+        return True

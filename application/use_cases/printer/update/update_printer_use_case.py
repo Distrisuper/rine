@@ -6,7 +6,7 @@ class UpdatePrinterUseCase(UpdatePrinterUseCaseInterface):
     def __init__(self, repo: PrinterRepository):
         self._repo = repo
 
-    def __call__(self, printer_id: int, name: str = '', is_active: Optional[bool] = None, channel_ids: Optional[List[int]] = None) -> Optional[dict]:
+    def __call__(self, printer_id: int, name: str = '', is_active: Optional[bool] = None, channel_ids: Optional[List[int]] = None) -> dict:
         printer = self._repo.update_printer(
             printer_id,
             name=name,
@@ -14,7 +14,7 @@ class UpdatePrinterUseCase(UpdatePrinterUseCaseInterface):
         )
         
         if not printer:
-            return None
+            raise ValueError("Impresora no encontrada")
         
         if channel_ids is not None:
             self._repo.set_printer_channels(printer_id, channel_ids)

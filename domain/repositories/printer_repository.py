@@ -3,23 +3,40 @@ from typing import Optional
 
 from domain.entities.printer import Printer, PrinterChannel
 from domain.entities.channel import Channel
+from domain.value_objects import PrinterConfig
 
 
 class PrinterRepository:
     def __init__(self, engine):
         self.engine = engine
 
-    def get_printer_for_channel(self, channel: int) -> Optional[Printer]:
+    def get_printer_for_channel(self, channel: int) -> Optional[PrinterConfig]:
         with Session(self.engine) as session:
             statement = (
-                select(Printer)
+                select(Printer, PrinterChannel)
                 .join(PrinterChannel, Printer.id == PrinterChannel.printer_id)
                 .join(Channel, PrinterChannel.channel_id == Channel.id)
                 .where(Channel.channel_number == channel)
                 .where(PrinterChannel.is_active == True)
                 .where(Printer.is_active == True)
             )
-            return session.exec(statement).first()
+            result = session.exec(statement).first()
+            
+            if not result:
+                return None
+                
+            printer, pc = result
+            
+            # Lógica de mapeo de tipo movida desde el antiguo Registry
+            printer_type = "laser_printer"
+            if "zebra" in printer.name.lower():
+                printer_type = "zebra_printer"
+                
+            return PrinterConfig(
+                name=printer.name,
+                is_active=printer.is_active,
+                printer_type=printer_type
+            )
 
     def get_all_printers(self) -> list[Printer]:
         with Session(self.engine) as session:

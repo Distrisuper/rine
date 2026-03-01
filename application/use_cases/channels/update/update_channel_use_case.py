@@ -9,7 +9,7 @@ class UpdateChannelUseCase(UpdateChannelUseCaseInterface):
     def __call__(self, channel_id: int, description: Optional[str], is_active: Optional[bool], template_id: Optional[int]) -> dict:
         channel = self._repo.update(channel_id, description, is_active, template_id)
         if not channel:
-            return None
+            raise ValueError("Channel no encontrado")
             
         return {
             "id": channel.id,

@@ -1,7 +1,7 @@
 """Interfaz para resolver el template de remito según channel y contexto (legacy: server, ds, location)."""
 from abc import ABC, abstractmethod
 
-from domain.entities.models import ResolvedTemplate
+from domain.value_objects import ResolvedTemplate
 
 
 class RemitoTemplateResolver(ABC):

@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import Optional
 import json
 
-from domain.entities.printer_registry import PrinterRegistry, PrinterConfig
-from domain.entities.render_data import LabelRenderData, RemitoRenderData
+from domain.value_objects import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
 from domain.entities.template import Template
 from infrastructure.db.database import engine
@@ -31,9 +30,6 @@ class PrintJob(SQLModel, table=True):
     error_message: Optional[str] = None
     processing_since: Optional[datetime] = None
     cups_job_id: Optional[int] = Field(default=None)
-
-    def get_printer(self) -> PrinterConfig:
-        return PrinterRegistry.get_printer_for_channel(self.channel)
 
     def get_template(self) -> Template | None:
         with Session(engine) as session:

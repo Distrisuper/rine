@@ -6,4 +6,7 @@ class DeleteChannelUseCase(DeleteChannelUseCaseInterface):
         self._repo = repo
 
     def __call__(self, channel_id: int) -> bool:
-        return self._repo.delete(channel_id)
+        success = self._repo.delete(channel_id)
+        if not success:
+            raise ValueError("Channel no encontrado")
+        return True
