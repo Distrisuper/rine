@@ -1,15 +1,15 @@
 import json
 from datetime import datetime
-
 from application.use_cases.print_jobs.create.create_print_job_use_case_interface import (
     CreatePrintJobUseCaseInterface,
 )
 from domain.entities.print_job import PrintJob
-from sqlmodel import Session
-from infrastructure.db.database import engine
-
+from domain.repositories.print_job_repository import PrintJobRepository
 
 class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
+    def __init__(self, repo: PrintJobRepository):
+        self._repo = repo
+
     def __call__(
         self,
         channel: int,
@@ -27,22 +27,19 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
             date_created=datetime.utcnow(),
         )
 
-        with Session(engine) as session:
-            session.add(job)
-            session.commit()
-            session.refresh(job)
+        saved_job = self._repo.create(job)
 
         return {
-            "id": job.id,
-            "client_code": job.client_code,
-            "client_name": job.client_name,
-            "channel": job.channel,
-            "status": job.status,
-            "print_count": job.print_count,
-            "print_type": job.print_type,
-            "date_created": job.date_created,
-            "date_started": job.date_started,
-            "date_processed": job.date_processed,
-            "printer_name": job.printer_name,
-            "error_message": job.error_message,
+            "id": saved_job.id,
+            "client_code": saved_job.client_code,
+            "client_name": saved_job.client_name,
+            "channel": saved_job.channel,
+            "status": saved_job.status,
+            "print_count": saved_job.print_count,
+            "print_type": saved_job.print_type,
+            "date_created": saved_job.date_created,
+            "date_started": saved_job.date_started,
+            "date_processed": saved_job.date_processed,
+            "printer_name": saved_job.printer_name,
+            "error_message": saved_job.error_message,
         }

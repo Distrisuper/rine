@@ -2,12 +2,21 @@ from functools import lru_cache
 
 # Application Use Cases
 from application.use_cases.channels.create.create_channel_use_case import CreateChannelUseCase
+from application.use_cases.channels.get_all.list_channels_use_case import ListChannelsUseCase
+from application.use_cases.channels.update.update_channel_use_case import UpdateChannelUseCase
+from application.use_cases.channels.delete.delete_channel_use_case import DeleteChannelUseCase
 from application.use_cases.hello.get.get_hello_use_case import GetHelloUseCase
 from application.use_cases.health.health_use_case import HealthUseCase
 from application.use_cases.print_jobs.create.create_print_job_use_case import CreatePrintJobUseCase
+from application.use_cases.print_jobs.get_all.list_print_jobs_use_case import ListPrintJobsUseCase
 from application.use_cases.printer.discover.discover_printer_use_case import DiscoverPrinterUseCase
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
 from application.use_cases.printer.get_status.get_status_use_case import GetStatusUseCase
+from application.use_cases.printer.get_all.list_printers_use_case import ListPrintersUseCase
+from application.use_cases.printer.create.create_printer_use_case import CreatePrinterUseCase
+from application.use_cases.printer.update.update_printer_use_case import UpdatePrinterUseCase
+from application.use_cases.printer.delete.delete_printer_use_case import DeletePrinterUseCase
+from application.use_cases.template.get_all.list_templates_use_case import ListTemplatesUseCase
 from application.use_cases.template.preview_label.preview_label_use_case import PreviewLabelUseCase
 from application.use_cases.template.preview_remito.preview_remito_use_case import PreviewRemitoUseCase
 from application.use_cases.printer.test.test_printer_use_case import TestPrinterUseCase
@@ -16,10 +25,19 @@ from application.use_cases.printer.test.test_printer_use_case import TestPrinter
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.health.health_controller import HealthController
 from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.channels.get_all.list_channels_controller import ListChannelsController
+from infrastructure.controllers.channels.update.update_channel_controller import UpdateChannelController
+from infrastructure.controllers.channels.delete.delete_channel_controller import DeleteChannelController
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
+from infrastructure.controllers.print_jobs.get_all.list_print_jobs_controller import ListPrintJobsController
 from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
 from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
 from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
+from infrastructure.controllers.printer.get_all.list_printers_controller import ListPrintersController
+from infrastructure.controllers.printer.create.create_printer_controller import CreatePrinterController
+from infrastructure.controllers.printer.update.update_printer_controller import UpdatePrinterController
+from infrastructure.controllers.printer.delete.delete_printer_controller import DeletePrinterController
+from infrastructure.controllers.template.get_all.list_templates_controller import ListTemplatesController
 from infrastructure.controllers.template.label_preview.preview_label_controller import PreviewLabelController
 from infrastructure.controllers.template.remito_preview.preview_remito_controller import PreviewRemitoController
 from infrastructure.controllers.printer.test.test_printer_controller import TestPrinterController
@@ -52,23 +70,72 @@ class Container:
     def health_controller(self) -> HealthController:
         return self.init_health_controller()
 
-    # Channel
+    # Channel - Create
     @lru_cache
     def init_create_channel_controller(self) -> CreateChannelController:
-        use_case = CreateChannelUseCase()
+        from infrastructure.db.database import engine
+        repo = ChannelRepository(engine)
+        use_case = CreateChannelUseCase(repo)
         return CreateChannelController(use_case)
 
     def create_channel_controller(self) -> CreateChannelController:
         return self.init_create_channel_controller()
 
-    # PrintJob
+    # Channel - List
+    @lru_cache
+    def init_list_channels_controller(self) -> ListChannelsController:
+        from infrastructure.db.database import engine
+        channel_repo = ChannelRepository(engine)
+        template_repo = TemplateRepository(engine)
+        use_case = ListChannelsUseCase(channel_repo, template_repo)
+        return ListChannelsController(use_case)
+
+    def list_channels_controller(self) -> ListChannelsController:
+        return self.init_list_channels_controller()
+
+    # Channel - Update
+    @lru_cache
+    def init_update_channel_controller(self) -> UpdateChannelController:
+        from infrastructure.db.database import engine
+        repo = ChannelRepository(engine)
+        use_case = UpdateChannelUseCase(repo)
+        return UpdateChannelController(use_case)
+
+    def update_channel_controller(self) -> UpdateChannelController:
+        return self.init_update_channel_controller()
+
+    # Channel - Delete
+    @lru_cache
+    def init_delete_channel_controller(self) -> DeleteChannelController:
+        from infrastructure.db.database import engine
+        repo = ChannelRepository(engine)
+        use_case = DeleteChannelUseCase(repo)
+        return DeleteChannelController(use_case)
+
+    def delete_channel_controller(self) -> DeleteChannelController:
+        return self.init_delete_channel_controller()
+
+    # PrintJob - Create
     @lru_cache
     def init_create_print_job_controller(self) -> CreatePrintJobController:
-        use_case = CreatePrintJobUseCase()
+        from infrastructure.db.database import engine
+        repo = PrintJobRepository(engine)
+        use_case = CreatePrintJobUseCase(repo)
         return CreatePrintJobController(use_case)
 
     def create_print_job_controller(self) -> CreatePrintJobController:
         return self.init_create_print_job_controller()
+
+    # PrintJob - List
+    @lru_cache
+    def init_list_print_jobs_controller(self) -> ListPrintJobsController:
+        from infrastructure.db.database import engine
+        repo = PrintJobRepository(engine)
+        use_case = ListPrintJobsUseCase(repo)
+        return ListPrintJobsController(use_case)
+
+    def list_print_jobs_controller(self) -> ListPrintJobsController:
+        return self.init_list_print_jobs_controller()
 
     # Printer - Discover
     @lru_cache
@@ -99,6 +166,61 @@ class Container:
 
     def get_status_controller(self) -> GetStatusController:
         return self.init_get_status_controller()
+
+    # Printer - List
+    @lru_cache
+    def init_list_printers_controller(self) -> ListPrintersController:
+        from infrastructure.db.database import engine
+        repo = PrinterRepository(engine)
+        use_case = ListPrintersUseCase(repo)
+        return ListPrintersController(use_case)
+
+    def list_printers_controller(self) -> ListPrintersController:
+        return self.init_list_printers_controller()
+
+    # Printer - Create
+    @lru_cache
+    def init_create_printer_controller(self) -> CreatePrinterController:
+        from infrastructure.db.database import engine
+        repo = PrinterRepository(engine)
+        use_case = CreatePrinterUseCase(repo)
+        return CreatePrinterController(use_case)
+
+    def create_printer_controller(self) -> CreatePrinterController:
+        return self.init_create_printer_controller()
+
+    # Printer - Update
+    @lru_cache
+    def init_update_printer_controller(self) -> UpdatePrinterController:
+        from infrastructure.db.database import engine
+        repo = PrinterRepository(engine)
+        use_case = UpdatePrinterUseCase(repo)
+        return UpdatePrinterController(use_case)
+
+    def update_printer_controller(self) -> UpdatePrinterController:
+        return self.init_update_printer_controller()
+
+    # Printer - Delete
+    @lru_cache
+    def init_delete_printer_controller(self) -> DeletePrinterController:
+        from infrastructure.db.database import engine
+        repo = PrinterRepository(engine)
+        use_case = DeletePrinterUseCase(repo)
+        return DeletePrinterController(use_case)
+
+    def delete_printer_controller(self) -> DeletePrinterController:
+        return self.init_delete_printer_controller()
+
+    # Template - List
+    @lru_cache
+    def init_list_templates_controller(self) -> ListTemplatesController:
+        from infrastructure.db.database import engine
+        repo = TemplateRepository(engine)
+        use_case = ListTemplatesUseCase(repo)
+        return ListTemplatesController(use_case)
+
+    def list_templates_controller(self) -> ListTemplatesController:
+        return self.init_list_templates_controller()
 
     # Template - Label Preview
     @lru_cache

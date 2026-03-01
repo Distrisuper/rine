@@ -10,67 +10,54 @@ from infrastructure.controllers.template.label_preview.preview_label_controller 
 from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
 from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
 from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
+from infrastructure.controllers.printer.get_all.list_printers_controller import ListPrintersController
+from infrastructure.controllers.printer.create.create_printer_controller import CreatePrinterController
+from infrastructure.controllers.printer.update.update_printer_controller import UpdatePrinterController
+from infrastructure.controllers.printer.delete.delete_printer_controller import DeletePrinterController
 from infrastructure.controllers.template.remito_preview.preview_remito_controller import PreviewRemitoController
+from infrastructure.controllers.template.get_all.list_templates_controller import ListTemplatesController
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
+from infrastructure.controllers.print_jobs.get_all.list_print_jobs_controller import ListPrintJobsController
 from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.channels.get_all.list_channels_controller import ListChannelsController
+from infrastructure.controllers.channels.update.update_channel_controller import UpdateChannelController
+from infrastructure.controllers.channels.delete.delete_channel_controller import DeleteChannelController
 from infrastructure.controllers.printer.test.test_printer_controller import TestPrinterController
 from infrastructure.api.container import container
-from domain.repositories.printer_repository import PrinterRepository
-from domain.repositories.channel_repository import ChannelRepository
-from domain.repositories.template_repository import TemplateRepository
 
 # DTOs
 from infrastructure.dtos.channels.create.request import CreateChannelRequestDTO
-from infrastructure.dtos.channels.create.response import CreateChannelResponseDTO
 from infrastructure.dtos.channels.update.request import UpdateChannelRequestDTO
+from infrastructure.dtos.channels.response import ChannelResponseDTO
 from infrastructure.dtos.printers.create.request import CreatePrinterRequestDTO
 from infrastructure.dtos.printers.update.request import UpdatePrinterRequestDTO
+from infrastructure.dtos.printers.response import PrinterResponseDTO
 from infrastructure.dtos.print_jobs.create.request import CreatePrintJobRequestDTO
 from infrastructure.dtos.print_jobs.create.response import CreatePrintJobResponseDTO
+from infrastructure.dtos.print_jobs.list.response import PaginatedPrintJobsResponseDTO
 from infrastructure.dtos.printer.discover.response import DiscoverPrinterResponseDTO
 from infrastructure.dtos.printer.get_one_status_by_name.response import GetOneStatusByNameResponseDTO
 from infrastructure.dtos.printer.get_status.response import GetStatusResponseDTO
 from infrastructure.dtos.template.label_preview.request import LabelPreviewRequestDTO
 from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO
+from infrastructure.dtos.template.list.response import TemplateResponseDTO
 from infrastructure.dtos.printer.test.response import TestPrinterResponseDTO
+from infrastructure.dtos.health.response import HealthResponseDTO
+from infrastructure.dtos.hello.get.response import HelloGetResponseDTO
 
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Any, Dict, Optional
-from sqlmodel import select, and_, desc
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def get_printer_repository() -> PrinterRepository:
-    from infrastructure.db.database import engine
-    return PrinterRepository(engine)
-
-
-def get_channel_repository() -> ChannelRepository:
-    from infrastructure.db.database import engine
-    return ChannelRepository(engine)
-
-
-def get_template_repository():
-    from infrastructure.db.database import engine
-    return TemplateRepository(engine)
-
-
-class CreatePrintJobRequest(BaseModel):
-    channel: int
-    client_code: str
-    client_name: str
-    payload: Dict[str, Any]
-
-
-@router.get("/", tags=["Health"])
+@router.get("/", tags=["Health"], response_model=HelloGetResponseDTO)
 async def root(controller: HelloGetController = Depends(container.hello_controller)):
     return controller()
 
 
-@router.get("/health", tags=["Health"])
+@router.get("/health", tags=["Health"], response_model=HealthResponseDTO)
 async def health(controller: HealthController = Depends(container.health_controller)):
     return controller()
 
@@ -154,6 +141,7 @@ async def create_print_job(
     tags=["PrintJobs"],
     summary="Listar trabajos de impresión",
     description="Lista trabajos de impresión con filtros opcionales.",
+    response_model=PaginatedPrintJobsResponseDTO,
 )
 async def list_print_jobs(
     printer_name: Optional[str] = Query(None, description="Filtrar por nombre de impresora"),
@@ -162,55 +150,16 @@ async def list_print_jobs(
     status: Optional[str] = Query(None, description="Filtrar por status: pending, printed, failed"),
     page: int = Query(1, ge=1, description="Página"),
     limit: int = Query(100, ge=1, le=500, description="Registros por página"),
+    controller: ListPrintJobsController = Depends(container.list_print_jobs_controller),
 ):
-    from domain.entities.print_job import PrintJob
-    from infrastructure.db.database import engine
-    from sqlmodel import Session
-
-    with Session(engine) as session:
-        query = select(PrintJob)
-
-        filters = []
-        if printer_name:
-            filters.append(PrintJob.printer_name == printer_name)
-        if date_from:
-            filters.append(PrintJob.date_created >= date_from)
-        if date_to:
-            filters.append(PrintJob.date_created <= date_to)
-        if status:
-            filters.append(PrintJob.status == status)
-
-        if filters:
-            query = query.where(and_(*filters))
-
-        query = query.order_by(desc(PrintJob.date_created))
-
-        total = len(session.exec(query).all())
-        query = query.offset((page - 1) * limit).limit(limit)
-        jobs = session.exec(query).all()
-
-        return {
-            "data": [
-                {
-                    "id": j.id,
-                    "client_code": j.client_code,
-                    "client_name": j.client_name,
-                    "channel": j.channel,
-                    "status": j.status,
-                    "print_count": j.print_count,
-                    "print_type": j.print_type,
-                    "date_created": j.date_created.isoformat() if j.date_created else None,
-                    "date_started": j.date_started.isoformat() if j.date_started else None,
-                    "date_processed": j.date_processed.isoformat() if j.date_processed else None,
-                    "printer_name": j.printer_name,
-                    "error_message": j.error_message,
-                }
-                for j in jobs
-            ],
-            "page": page,
-            "limit": limit,
-            "total": total,
-        }
+    return controller(
+        printer_name=printer_name,
+        date_from=date_from,
+        date_to=date_to,
+        status=status,
+        page=page,
+        limit=limit
+    )
 
 
 @router.get(
@@ -231,9 +180,12 @@ async def discover_printers(
     tags=["Printers"],
     summary="Listar impresoras configuradas",
     description="Lista todas las impresoras con sus channels.",
+    response_model=List[PrinterResponseDTO],
 )
-async def list_printers(repo: PrinterRepository = Depends(get_printer_repository)):
-    return repo.get_all_printers_with_channels()
+async def list_printers(
+    controller: ListPrintersController = Depends(container.list_printers_controller),
+):
+    return controller()
 
 
 @router.post(
@@ -241,12 +193,13 @@ async def list_printers(repo: PrinterRepository = Depends(get_printer_repository
     tags=["Printers"],
     summary="Crear impresora",
     description="Crea una nueva impresora con channels asociados.",
+    response_model=PrinterResponseDTO,
 )
 async def create_printer(
     body: CreatePrinterRequestDTO,
-    repo: PrinterRepository = Depends(get_printer_repository),
+    controller: CreatePrinterController = Depends(container.create_printer_controller),
 ):
-    return repo.create_printer(body.name, body.channel_ids or [])
+    return controller(body.name, body.channel_ids or [])
 
 
 @router.put(
@@ -254,23 +207,21 @@ async def create_printer(
     tags=["Printers"],
     summary="Editar impresora",
     description="Edita una impresora y sus channels.",
+    response_model=PrinterResponseDTO,
 )
 async def update_printer(
     printer_id: int,
     body: UpdatePrinterRequestDTO,
-    repo: PrinterRepository = Depends(get_printer_repository),
+    controller: UpdatePrinterController = Depends(container.update_printer_controller),
 ):
-    printer = repo.update_printer(
-        printer_id,
+    printer = controller(
+        printer_id=printer_id,
         name=body.name,
         is_active=body.is_active,
+        channel_ids=body.channel_ids,
     )
     if not printer:
         raise HTTPException(status_code=404, detail="Impresora no encontrada")
-    
-    if body.channel_ids is not None:
-        repo.set_printer_channels(printer_id, body.channel_ids)
-        printer["channels"] = repo.get_printer_channels(printer_id)
     
     return printer
 
@@ -283,9 +234,9 @@ async def update_printer(
 )
 async def delete_printer(
     printer_id: int,
-    repo: PrinterRepository = Depends(get_printer_repository),
+    controller: DeletePrinterController = Depends(container.delete_printer_controller),
 ):
-    success = repo.delete_printer(printer_id)
+    success = controller(printer_id)
     if not success:
         raise HTTPException(status_code=404, detail="Impresora no encontrada")
     return {"status": "deleted"}
@@ -310,25 +261,12 @@ async def test_printer(
     tags=["Channels"],
     summary="Listar channels",
     description="Lista todos los channels configurados.",
+    response_model=List[ChannelResponseDTO],
 )
 async def list_channels(
-    repo: ChannelRepository = Depends(get_channel_repository),
-    template_repo: TemplateRepository = Depends(get_template_repository),
+    controller: ListChannelsController = Depends(container.list_channels_controller),
 ):
-    channels = repo.get_all()
-    templates = {t.id: t.name for t in template_repo.get_all()}
-    return [
-        {
-            "id": c.id,
-            "channel_number": c.channel_number,
-            "description": c.description,
-            "template_id": c.template_id,
-            "template_name": templates.get(c.template_id),
-            "is_active": c.is_active,
-            "created_at": c.created_at.isoformat() if c.created_at else None,
-        }
-        for c in channels
-    ]
+    return controller()
 
 
 @router.post(
@@ -336,7 +274,7 @@ async def list_channels(
     tags=["Channels"],
     summary="Crear channel",
     description="Crea un nuevo channel.",
-    response_model=CreateChannelResponseDTO,
+    response_model=ChannelResponseDTO,
 )
 async def create_channel(
     body: CreateChannelRequestDTO,
@@ -354,22 +292,22 @@ async def create_channel(
     tags=["Channels"],
     summary="Editar channel",
     description="Edita la descripción o estado de un channel.",
+    response_model=ChannelResponseDTO,
 )
 async def update_channel(
     channel_id: int,
     body: UpdateChannelRequestDTO,
-    repo: ChannelRepository = Depends(get_channel_repository),
+    controller: UpdateChannelController = Depends(container.update_channel_controller),
 ):
-    channel = repo.update(channel_id, body.description, body.is_active, body.template_id)
+    channel = controller(
+        channel_id=channel_id,
+        description=body.description,
+        is_active=body.is_active,
+        template_id=body.template_id,
+    )
     if not channel:
         raise HTTPException(status_code=404, detail="Channel no encontrado")
-    return {
-        "id": channel.id,
-        "channel_number": channel.channel_number,
-        "description": channel.description,
-        "is_active": channel.is_active,
-        "template_id": channel.template_id,
-    }
+    return channel
 
 
 @router.delete(
@@ -380,9 +318,9 @@ async def update_channel(
 )
 async def delete_channel(
     channel_id: int,
-    repo: ChannelRepository = Depends(get_channel_repository),
+    controller: DeleteChannelController = Depends(container.delete_channel_controller),
 ):
-    success = repo.delete(channel_id)
+    success = controller(channel_id)
     if not success:
         raise HTTPException(status_code=404, detail="Channel no encontrado")
     return {"status": "deleted"}
@@ -394,15 +332,9 @@ async def delete_channel(
     tags=["Templates"],
     summary="Listar templates",
     description="Lista todos los templates configurados.",
+    response_model=List[TemplateResponseDTO],
 )
-async def list_templates(repo=Depends(get_template_repository)):
-    templates = repo.get_all()
-    return [
-        {
-            "id": t.id,
-            "name": t.name,
-            "file_path": t.file_path,
-            "created_at": t.created_at.isoformat() if t.created_at else None,
-        }
-        for t in templates
-    ]
+async def list_templates(
+    controller: ListTemplatesController = Depends(container.list_templates_controller),
+):
+    return controller()
