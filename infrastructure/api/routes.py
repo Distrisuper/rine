@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import Response
 
-from infrastructure.controllers.hello.hello_get_controller import HelloGetController
+from infrastructure.controllers.example.example_get_controller import ExampleGetController
 from infrastructure.controllers.health.health_controller import HealthController
 from infrastructure.controllers.template.label_preview.preview_label_controller import PreviewLabelController
 from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
@@ -46,7 +46,7 @@ from infrastructure.dtos.template.remito_preview.request import RemitoPreviewReq
 from infrastructure.dtos.template.list.response import TemplateResponseDTO
 from infrastructure.dtos.printer.test.response import TestPrinterResponseDTO
 from infrastructure.dtos.health.response import HealthResponseDTO
-from infrastructure.dtos.hello.get.response import HelloGetResponseDTO
+from infrastructure.dtos.example.get.example_get_response import ExampleGetResponseDTO
 
 from datetime import datetime
 from typing import List, Optional
@@ -55,8 +55,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", tags=["Health"], response_model=HelloGetResponseDTO)
-async def root(controller: HelloGetController = Depends(container.hello_controller)):
+@router.get("/", tags=["Example"], response_model=ExampleGetResponseDTO)
+async def example_flow(controller: ExampleGetController = Depends(container.example_controller)):
+    """Ejemplo de flujo completo (molde de la arquitectura)."""
     return controller()
 
 

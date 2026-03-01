@@ -5,7 +5,7 @@ from application.use_cases.channels.create.create_channel_use_case import Create
 from application.use_cases.channels.get_all.list_channels_use_case import ListChannelsUseCase
 from application.use_cases.channels.update.update_channel_use_case import UpdateChannelUseCase
 from application.use_cases.channels.delete.delete_channel_use_case import DeleteChannelUseCase
-from application.use_cases.hello.get.get_hello_use_case import GetHelloUseCase
+from application.use_cases.example.get.get_example_use_case import GetExampleUseCase
 from application.use_cases.health.health_use_case import HealthUseCase
 from application.use_cases.print_jobs.create.create_print_job_use_case import CreatePrintJobUseCase
 from application.use_cases.print_jobs.get_all.list_print_jobs_use_case import ListPrintJobsUseCase
@@ -22,7 +22,7 @@ from application.use_cases.template.preview_remito.preview_remito_use_case impor
 from application.use_cases.printer.test.test_printer_use_case import TestPrinterUseCase
 
 # Infrastructure Controllers
-from infrastructure.controllers.hello.hello_get_controller import HelloGetController
+from infrastructure.controllers.example.example_get_controller import ExampleGetController
 from infrastructure.controllers.health.health_controller import HealthController
 from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
 from infrastructure.controllers.channels.get_all.list_channels_controller import ListChannelsController
@@ -52,14 +52,14 @@ from infrastructure.repositories.template_repository import TemplateRepository
 from infrastructure.repositories.print_job_repository import PrintJobRepository
 
 class Container:
-    # Hello
+    # Example (Sample Flow)
     @lru_cache
-    def init_hello_controller(self) -> HelloGetController:
-        use_case = GetHelloUseCase()
-        return HelloGetController(use_case)
+    def init_example_controller(self) -> ExampleGetController:
+        use_case = GetExampleUseCase()
+        return ExampleGetController(use_case)
 
-    def hello_controller(self) -> HelloGetController:
-        return self.init_hello_controller()
+    def example_controller(self) -> ExampleGetController:
+        return self.init_example_controller()
 
     # Health
     @lru_cache

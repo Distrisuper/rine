@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class GetHelloUseCaseInterface(ABC):
+class GetExampleUseCaseInterface(ABC):
     @abstractmethod
     def __call__(self) -> dict:
         pass
