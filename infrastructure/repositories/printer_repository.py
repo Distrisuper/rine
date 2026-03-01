@@ -69,10 +69,13 @@ class PrinterRepository(PrinterRepositoryInterface):
                         session.add(pc)
                 session.commit()
             
+            channels = self.get_printer_channels(printer_id) if printer_id > 0 else []
             return {
                 "id": printer_id,
                 "name": printer_name,
-                "channels": self.get_printer_channels(printer_id) if printer_id > 0 else [],
+                "is_active": printer.is_active,
+                "channels": channels,
+                "channel_count": len(channels),
             }
 
     def update_printer(self, printer_id: int, name: str = '', is_active: Optional[bool] = None) -> Optional[dict]:
@@ -88,11 +91,13 @@ class PrinterRepository(PrinterRepositoryInterface):
             
             session.commit()
             
+            channels = self.get_printer_channels(printer_id) if printer_id > 0 else []
             return {
                 "id": printer.id,
                 "name": printer.name,
                 "is_active": printer.is_active,
-                "channels": self.get_printer_channels(printer_id) if printer_id > 0 else [],
+                "channels": channels,
+                "channel_count": len(channels),
             }
 
     def set_printer_channels(self, printer_id: int, channel_ids: list[int]) -> bool:
