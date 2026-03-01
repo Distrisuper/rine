@@ -1,47 +1,23 @@
 # API routes mínimas
-import base64
 import json
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import Response
 
-from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
 from infrastructure.controllers.health.health_controller import HealthController
-from infrastructure.controllers.template.label_preview.label_preview_controller import LabelPreviewController
-from domain.services.printer_discovery import PrinterDiscovery
-from domain.entities.models import TemplateTestItem
-from infrastructure.services.extra_data_parser import DefaultExtraDataParser
-from domain.services.label_data_provider import InlineLabelDataProvider
-from domain.services.label_render_service import PlaceholderLabelRenderer
-from domain.services.label_template_resolver import LegacyLabelTemplateResolver
-from domain.services.label_template_service import LabelTemplateService
-from infrastructure.print_job_service import print_pdf_to_printer, print_raw_to_printer
-from domain.services.remito_data_provider import InlineRemitoDataProvider
-from domain.services.remito_render_service import PlaceholderRemitoRenderer
-from domain.services.remito_template_resolver import LegacyRemitoTemplateResolver
-from domain.services.remito_template_service import RemitoTemplateService
-from application.use_cases.hello.get.get_hello_use_case_interface import GetHelloUseCaseInterface
-from application.use_cases.hello.get.get_hello_use_case import GetHelloUseCase
-from application.use_cases.health.health_use_case_interface import HealthUseCaseInterface
-from application.use_cases.health.health_use_case import HealthUseCase
-from application.use_cases.printer.get_status.get_status_use_case_interface import GetStatusUseCaseInterface
-from application.use_cases.printer.get_status.get_status_use_case import GetStatusUseCase
+from infrastructure.controllers.template.label_preview.preview_label_controller import PreviewLabelController
 from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
-from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
-from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
-from application.use_cases.printer.discover.discover_printer_use_case_interface import DiscoverPrinterUseCaseInterface
-from application.use_cases.printer.discover.discover_printer_use_case import DiscoverPrinterUseCase
 from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
-from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
-from application.use_cases.template.preview_remito.preview_remito_use_case import PreviewRemitoUseCase
-from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
-from application.use_cases.template.render_label.render_label_use_case import RenderLabelUseCase
-from application.use_cases.print_jobs.create.create_print_job_use_case import CreatePrintJobUseCase
-from application.use_cases.print_jobs.create.create_print_job_use_case_interface import CreatePrintJobUseCaseInterface
+from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
+from infrastructure.controllers.template.remito_preview.preview_remito_controller import PreviewRemitoController
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
+from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.printer.test.test_printer_controller import TestPrinterController
+from infrastructure.api.container import container
 from domain.repositories.printer_repository import PrinterRepository
 from domain.repositories.channel_repository import ChannelRepository
+from domain.repositories.template_repository import TemplateRepository
 
 # DTOs
 from infrastructure.dtos.channels.create.request import CreateChannelRequestDTO
@@ -51,37 +27,20 @@ from infrastructure.dtos.printers.create.request import CreatePrinterRequestDTO
 from infrastructure.dtos.printers.update.request import UpdatePrinterRequestDTO
 from infrastructure.dtos.print_jobs.create.request import CreatePrintJobRequestDTO
 from infrastructure.dtos.print_jobs.create.response import CreatePrintJobResponseDTO
-from infrastructure.dtos.print_jobs.print.request import PrintJobRequestDTO
-from infrastructure.dtos.print_jobs.print.response import PrintJobResponseDTO
 from infrastructure.dtos.printer.discover.response import DiscoverPrinterResponseDTO
-from infrastructure.dtos.printer.get_one_status_by_name.request import GetOneStatusByNameRequestDTO
 from infrastructure.dtos.printer.get_one_status_by_name.response import GetOneStatusByNameResponseDTO
 from infrastructure.dtos.printer.get_status.response import GetStatusResponseDTO
 from infrastructure.dtos.template.label_preview.request import LabelPreviewRequestDTO
 from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO
+from infrastructure.dtos.printer.test.response import TestPrinterResponseDTO
 
-# Use Cases
-from application.use_cases.channels.create.create_channel_use_case import CreateChannelUseCase
-from application.use_cases.channels.create.create_channel_use_case_interface import CreateChannelUseCaseInterface
-
-# Controllers
-from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
-from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
-from infrastructure.controllers.template.remito_preview.remito_preview_controller import RemitoPreviewController
-from infrastructure.api.container import container
-from domain.repositories.template_repository import TemplateRepository
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from sqlmodel import select, and_, desc
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-
-
-
 
 
 def get_printer_repository() -> PrinterRepository:
@@ -94,36 +53,9 @@ def get_channel_repository() -> ChannelRepository:
     return ChannelRepository(engine)
 
 
-def get_remito_template_service() -> RemitoTemplateService:
-    """Servicio de remito: HTML+WeasyPrint si está disponible, sino placeholder PDF."""
-    from infrastructure.services.barcode_service import BarcodeService
-    barcode_service = BarcodeService()
-    try:
-        from infrastructure.html_remito_render_service import HtmlRemitoRenderer
-        renderer = HtmlRemitoRenderer(barcode_service)
-    except Exception as e:
-        logger.warning(
-            "Remito HTML renderer no disponible, usando placeholder PDF: %s",
-            e,
-            exc_info=True,
-        )
-        renderer = PlaceholderRemitoRenderer()
-    return RemitoTemplateService(
-        parser=DefaultExtraDataParser(),
-        resolver=LegacyRemitoTemplateResolver(),
-        data_provider=InlineRemitoDataProvider(),
-        renderer=renderer,
-    )
-
-
-def get_label_template_service() -> LabelTemplateService:
-    """Dependencia: servicio de templates de etiqueta con implementaciones por defecto."""
-    return LabelTemplateService(
-        parser=DefaultExtraDataParser(),
-        resolver=LegacyLabelTemplateResolver(),
-        data_provider=InlineLabelDataProvider(),
-        renderer=PlaceholderLabelRenderer(),
-    )
+def get_template_repository():
+    from infrastructure.db.database import engine
+    return TemplateRepository(engine)
 
 
 class CreatePrintJobRequest(BaseModel):
@@ -178,55 +110,9 @@ async def printer_status(
 async def remito_preview(
     body: RemitoPreviewRequestDTO,
     format: str = Query("binary", description="binary (PDF) o json (base64)"),
-    controller: RemitoPreviewController = Depends(container.remito_preview_controller),
+    controller: PreviewRemitoController = Depends(container.remito_preview_controller),
 ):
     return controller(body, format=format)
-
-
-@router.post(
-    "/printers/{printer_name}/print/remito",
-    tags=["Printers"],
-    summary="Imprimir remito en una impresora (CUPS)",
-    description="Genera el PDF del remito con el body indicado y envía el trabajo a la impresora por nombre. Solo funciona en Linux con CUPS; la impresora debe existir en CUPS (ej. PC42t). En Windows responde 503.",
-)
-async def print_remito_to_printer(
-    printer_name: str,
-    body: TemplateTestItem,
-    service: RemitoTemplateService = Depends(get_remito_template_service),
-):
-    """Envía el remito (template + datos del body) a la impresora indicada."""
-    try:
-        item = body.to_queue_item()
-        pdf_bytes = service.render(item)
-        job_id = print_pdf_to_printer(printer_name, pdf_bytes, job_title="Remito")
-        return {"printer": printer_name, "job_id": job_id}
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.post(
-    "/printers/{printer_name}/print/label",
-    tags=["Printers"],
-    summary="Imprimir etiqueta (ZPL) en una impresora (CUPS)",
-    description="Genera el ZPL de la etiqueta con el body indicado (channel=3) y envía el trabajo a la impresora por nombre. Para Zebra/etiquetas la cola en CUPS debe ser raw (-m raw). Solo Linux con CUPS; en Windows responde 503.",
-)
-async def print_label_to_printer(
-    printer_name: str,
-    body: TemplateTestItem,
-    service: LabelTemplateService = Depends(get_label_template_service),
-):
-    """Envía la etiqueta (template + datos del body) a la impresora indicada como ZPL raw."""
-    try:
-        item = body.to_queue_item()
-        zpl_bytes = service.render(item)
-        job_id = print_raw_to_printer(printer_name, zpl_bytes, job_title="Etiqueta", suffix=".zpl")
-        return {"printer": printer_name, "job_id": job_id}
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post(
@@ -239,7 +125,7 @@ async def print_label_to_printer(
 async def label_preview(
     body: LabelPreviewRequestDTO,
     format: str = Query("binary", description="binary (ZPL) o json (base64)"),
-    controller: LabelPreviewController = Depends(container.label_preview_controller),
+    controller: PreviewLabelController = Depends(container.preview_label_controller),
 ):
     return controller(body, format=format)
 
@@ -410,100 +296,13 @@ async def delete_printer(
     tags=["Printers"],
     summary="Test de impresión",
     description="Envía trabajos de prueba a todos los channels configurados en la impresora.",
+    response_model=TestPrinterResponseDTO,
 )
 async def test_printer(
     printer_id: int,
-    repo: PrinterRepository = Depends(get_printer_repository),
+    controller: TestPrinterController = Depends(container.test_printer_controller),
 ):
-    from domain.entities.channel import Channel
-    from domain.entities.template import Template
-    from domain.entities.print_job import PrintJob
-    from infrastructure.db.database import engine
-    from sqlmodel import Session
-    import random
-
-    printer = repo.get_printer_by_id(printer_id)
-    if not printer:
-        raise HTTPException(status_code=404, detail="Impresora no encontrada")
-
-    channels = repo.get_printer_channels(printer_id)
-    if not channels:
-        raise HTTPException(status_code=400, detail="La impresora no tiene channels configurados")
-
-    created_jobs = []
-
-    with Session(engine) as session:
-        for ch in channels:
-            channel_obj = session.get(Channel, ch["channel_id"])
-            if not channel_obj or not channel_obj.template_id:
-                continue
-
-            template = session.get(Template, channel_obj.template_id)
-            if not template:
-                continue
-
-            file_path = template.file_path.lower()
-            if file_path.endswith(".zpl"):
-                payload = {
-                    "to": f"Test Destinatario {random.randint(1000, 9999)}",
-                    "address": f"Test Dirección {random.randint(100, 999)}",
-                    "city": "Test Ciudad",
-                    "packages": f"{random.randint(1, 5)} bulto(s)",
-                }
-            elif file_path.endswith(".html"):
-                payload = {
-                    "client_code": f"{random.randint(100, 999)}",
-                    "client_name": "Test Cliente S.A.",
-                    "order_number": random.randint(1000, 9999),
-                    "address": f"Test Dirección {random.randint(100, 999)}",
-                    "city": "Test Ciudad",
-                    "items": [
-                        {"codigo": "TEST001", "cantidad": random.randint(1, 10), "descripcion": "Producto de prueba"},
-                        {"codigo": "TEST002", "cantidad": random.randint(1, 5), "descripcion": "Otro producto"},
-                    ],
-                    "total": round(random.uniform(100, 5000), 2),
-                    "remito_id": f"R-TEST-{random.randint(100000, 999999)}",
-                    "fecha": "27/02/2026",
-                    "reparto": "Test Reparto",
-                    "sucursal": "001",
-                    "obs": "Trabajo de prueba",
-                    "cant_unidades": str(random.randint(1, 20)),
-                    "valor_declarado": f"${random.randint(100, 5000)}",
-                    "numero_cot": f"COT-{random.randint(10000, 99999)}",
-                    "numero_cai": f"CAI-{random.randint(10000, 99999)}",
-                    "vencimiento": "15/03/2026",
-                    "disclaimer": "Trabajo de prueba generado desde admin",
-                }
-            else:
-                continue
-
-            job = PrintJob(
-                client_code=payload.get("client_code", "TEST"),
-                client_name=payload.get("client_name", "Test Cliente"),
-                channel=ch["channel_number"],
-                payload=json.dumps(payload),
-                status="pending",
-                print_count=0,
-            )
-            session.add(job)
-            session.commit()
-            session.refresh(job)
-
-            created_jobs.append({
-                "id": job.id,
-                "channel": ch["channel_number"],
-                "template": template.name,
-                "status": job.status,
-            })
-
-    return {"printer": printer.name, "jobs": created_jobs}
-
-
-# Channels endpoints
-def get_template_repository():
-    from infrastructure.db.database import engine
-    from domain.repositories.template_repository import TemplateRepository
-    return TemplateRepository(engine)
+    return controller(printer_id)
 
 
 @router.get(

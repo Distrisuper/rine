@@ -1,14 +1,11 @@
 import base64
-
 from fastapi import Response
 from fastapi.responses import JSONResponse
-
-from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
+from application.use_cases.template.preview_remito.preview_remito_use_case_interface import PreviewRemitoUseCaseInterface
 from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO
 
-
-class RemitoPreviewController:
-    def __init__(self, use_case: RenderRemitoUseCaseInterface):
+class PreviewRemitoController:
+    def __init__(self, use_case: PreviewRemitoUseCaseInterface):
         self._use_case = use_case
 
     def __call__(self, body: RemitoPreviewRequestDTO, format: str = "binary"):

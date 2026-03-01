@@ -1,7 +1,7 @@
-from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
+from application.use_cases.template.preview_label.preview_label_use_case_interface import PreviewLabelUseCaseInterface
 
 
-class RenderLabelUseCase(RenderLabelUseCaseInterface):
+class PreviewLabelUseCase(PreviewLabelUseCaseInterface):
     def __init__(self, template_service):
         self._template_service = template_service
 
