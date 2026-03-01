@@ -34,7 +34,15 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
 
         return {
             "id": job.id,
+            "client_code": job.client_code,
+            "client_name": job.client_name,
+            "channel": job.channel,
             "status": job.status,
-            "date_created": job.date_created.isoformat(),
-            "document_type": f"channel_{channel}",
+            "print_count": job.print_count,
+            "print_type": job.print_type,
+            "date_created": job.date_created,
+            "date_started": job.date_started,
+            "date_processed": job.date_processed,
+            "printer_name": job.printer_name,
+            "error_message": job.error_message,
         }

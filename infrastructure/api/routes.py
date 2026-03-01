@@ -7,9 +7,9 @@ from fastapi.responses import JSONResponse, Response
 
 from infrastructure.config import get_settings
 from infrastructure.controllers.hello.hello_get_controller import HelloGetController
-from infrastructure.controllers.hello.health_controller import HealthController
+from infrastructure.controllers.health.health_controller import HealthController
 from infrastructure.controllers.template.render_remito_controller import RenderRemitoController
-from infrastructure.controllers.template.render_label_controller import RenderLabelController
+from infrastructure.controllers.template.label_preview.label_preview_controller import LabelPreviewController
 from domain.services.printer_discovery import PrinterDiscovery
 from domain.entities.models import TemplateTestItem
 from infrastructure.services.extra_data_parser import DefaultExtraDataParser
@@ -24,16 +24,16 @@ from domain.services.remito_template_resolver import LegacyRemitoTemplateResolve
 from domain.services.remito_template_service import RemitoTemplateService
 from application.use_cases.hello.get.get_hello_use_case_interface import GetHelloUseCaseInterface
 from application.use_cases.hello.get.get_hello_use_case import GetHelloUseCase
-from application.use_cases.hello.health.health_use_case_interface import HealthUseCaseInterface
-from application.use_cases.hello.health.health_use_case import HealthUseCase
+from application.use_cases.health.health_use_case_interface import HealthUseCaseInterface
+from application.use_cases.health.health_use_case import HealthUseCase
 from application.use_cases.printer.get_status.get_status_use_case_interface import GetStatusUseCaseInterface
 from application.use_cases.printer.get_status.get_status_use_case import GetStatusUseCase
-from infrastructure.controllers.printer.get_status_controller import GetStatusController
+from infrastructure.controllers.printer.get_status.get_status_controller import GetStatusController
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case import GetOneStatusByNameUseCase
 from application.use_cases.printer.discover.discover_printer_use_case_interface import DiscoverPrinterUseCaseInterface
 from application.use_cases.printer.discover.discover_printer_use_case import DiscoverPrinterUseCase
-from infrastructure.controllers.printer.get_one_status_by_name_controller import GetOneStatusByNameController
+from infrastructure.controllers.printer.get_one_status_by_name.get_one_status_by_name_controller import GetOneStatusByNameController
 from application.use_cases.template.render_remito.render_remito_use_case_interface import RenderRemitoUseCaseInterface
 from application.use_cases.template.render_remito.render_remito_use_case import RenderRemitoUseCase
 from application.use_cases.template.render_label.render_label_use_case_interface import RenderLabelUseCaseInterface
@@ -43,6 +43,31 @@ from application.use_cases.print_jobs.create.create_print_job_use_case_interface
 from infrastructure.controllers.print_jobs.create.create_print_job_controller import CreatePrintJobController
 from domain.repositories.printer_repository import PrinterRepository
 from domain.repositories.channel_repository import ChannelRepository
+
+# DTOs
+from infrastructure.dtos.channels.create.request import CreateChannelRequestDTO
+from infrastructure.dtos.channels.create.response import CreateChannelResponseDTO
+from infrastructure.dtos.channels.update.request import UpdateChannelRequestDTO
+from infrastructure.dtos.printers.create.request import CreatePrinterRequestDTO
+from infrastructure.dtos.printers.update.request import UpdatePrinterRequestDTO
+from infrastructure.dtos.print_jobs.create.request import CreatePrintJobRequestDTO
+from infrastructure.dtos.print_jobs.create.response import CreatePrintJobResponseDTO
+from infrastructure.dtos.print_jobs.print.request import PrintJobRequestDTO
+from infrastructure.dtos.print_jobs.print.response import PrintJobResponseDTO
+from infrastructure.dtos.printer.discover.response import DiscoverPrinterResponseDTO
+from infrastructure.dtos.printer.get_one_status_by_name.request import GetOneStatusByNameRequestDTO
+from infrastructure.dtos.printer.get_one_status_by_name.response import GetOneStatusByNameResponseDTO
+from infrastructure.dtos.printer.get_status.response import GetStatusResponseDTO
+from infrastructure.dtos.template.label_preview.request import LabelPreviewRequestDTO
+
+# Use Cases
+from application.use_cases.channels.create.create_channel_use_case import CreateChannelUseCase
+from application.use_cases.channels.create.create_channel_use_case_interface import CreateChannelUseCaseInterface
+
+# Controllers
+from infrastructure.controllers.channels.create.create_channel_controller import CreateChannelController
+from infrastructure.controllers.printer.discover.discover_printer_controller import DiscoverPrinterController
+from infrastructure.api.container import container
 from domain.repositories.template_repository import TemplateRepository
 from pydantic import BaseModel
 from datetime import datetime
@@ -55,32 +80,10 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def get_hello_controller() -> HelloGetController:
-    use_case = GetHelloUseCase()
-    return HelloGetController(use_case)
-
-
-def get_health_controller() -> HealthController:
-    use_case = HealthUseCase()
-    return HealthController(use_case)
-
-
 def get_printer_discovery() -> PrinterDiscovery:
     """Dependencia: implementación por defecto (CUPS o mock)."""
     from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
     return CupsPrinterDiscoveryService()
-
-
-def get_status_controller() -> GetStatusController:
-    discovery = get_printer_discovery()
-    use_case = GetStatusUseCase(discovery)
-    return GetStatusController(use_case)
-
-
-def get_one_status_by_name_controller() -> GetOneStatusByNameController:
-    discovery = get_printer_discovery()
-    use_case = GetOneStatusByNameUseCase(discovery)
-    return GetOneStatusByNameController(use_case)
 
 
 def get_printer_repository() -> PrinterRepository:
@@ -91,34 +94,6 @@ def get_printer_repository() -> PrinterRepository:
 def get_channel_repository() -> ChannelRepository:
     from infrastructure.db.database import engine
     return ChannelRepository(engine)
-
-
-# Pydantic models for channels
-class ChannelCreate(BaseModel):
-    channel_number: int
-    description: Optional[str] = None
-    template_id: int
-
-
-class ChannelUpdate(BaseModel):
-    description: Optional[str] = None
-    is_active: Optional[bool] = None
-    template_id: Optional[int] = None
-
-
-class PrinterCreate(BaseModel):
-    name: str
-    channel_ids: List[int] = []
-
-
-class PrinterUpdate(BaseModel):
-    name: Optional[str] = None
-    is_active: Optional[bool] = None
-    channel_ids: Optional[List[int]] = None
-
-
-class PrinterChannelsUpdate(BaseModel):
-    channel_ids: List[int]
 
 
 def get_remito_template_service() -> RemitoTemplateService:
@@ -159,12 +134,6 @@ def get_render_remito_controller() -> RenderRemitoController:
     return RenderRemitoController(use_case)
 
 
-def get_render_label_controller() -> RenderLabelController:
-    template_service = get_label_template_service()
-    use_case = RenderLabelUseCase(template_service)
-    return RenderLabelController(use_case)
-
-
 class CreatePrintJobRequest(BaseModel):
     channel: int
     client_code: str
@@ -172,18 +141,13 @@ class CreatePrintJobRequest(BaseModel):
     payload: Dict[str, Any]
 
 
-def get_create_print_job_controller() -> CreatePrintJobController:
-    use_case = CreatePrintJobUseCase()
-    return CreatePrintJobController(use_case)
-
-
 @router.get("/", tags=["Health"])
-async def root(controller: HelloGetController = Depends(get_hello_controller)):
+async def root(controller: HelloGetController = Depends(container.hello_controller)):
     return controller()
 
 
 @router.get("/health", tags=["Health"])
-async def health(controller: HealthController = Depends(get_health_controller)):
+async def health(controller: HealthController = Depends(container.health_controller)):
     return controller()
 
 
@@ -192,8 +156,9 @@ async def health(controller: HealthController = Depends(get_health_controller)):
     tags=["Printers"],
     summary="Estado de la flota de impresoras",
     description="Lista todas las impresoras detectadas por CUPS con ready/not_ready y detalles. En Windows devuelve _cups_unavailable.",
+    response_model=GetStatusResponseDTO,
 )
-async def printers_status(controller: GetStatusController = Depends(get_status_controller)):
+async def printers_status(controller: GetStatusController = Depends(container.get_status_controller)):
     return controller()
 
 
@@ -202,12 +167,13 @@ async def printers_status(controller: GetStatusController = Depends(get_status_c
     tags=["Printers"],
     summary="Estado de una impresora",
     description="Estado de la impresora por nombre. 404 si no existe o CUPS no disponible.",
+    response_model=GetOneStatusByNameResponseDTO,
 )
-async def printer_status(name: str, controller: GetOneStatusByNameController = Depends(get_one_status_by_name_controller)):
-    data = controller(name)
-    if data is None:
-        raise HTTPException(status_code=404, detail="Impresora no encontrada o CUPS no disponible")
-    return data
+async def printer_status(
+    name: str,
+    controller: GetOneStatusByNameController = Depends(container.get_one_status_by_name_controller),
+):
+    return controller(name)
 
 
 @router.post(
@@ -285,29 +251,18 @@ async def print_label_to_printer(
 
 
 @router.post(
-    "/templates/label/test",
+    "/templates/label/preview",
     tags=["Templates"],
-    summary="Probar template etiqueta (ZPL)",
-    description="Genera ZPL de etiqueta con datos mock. Body: channel=3, location, opcional extra_data. Si format=json devuelve JSON con content_base64 para inspeccionar.",
+    summary="Preview template etiqueta (ZPL)",
+    description="Genera ZPL de etiqueta para preview.",
     response_class=Response,
 )
-async def template_label_test(
-    body: TemplateTestItem,
-    controller: RenderLabelController = Depends(get_render_label_controller),
-    format: str = Query("binary", description="binary (ZPL) o json (base64 para debug)"),
+async def label_preview(
+    body: LabelPreviewRequestDTO,
+    format: str = Query("binary", description="binary (ZPL) o json (base64)"),
+    controller: LabelPreviewController = Depends(container.label_preview_controller),
 ):
-    try:
-        response = controller(body)
-        if format == "json":
-            return JSONResponse(content={
-                "content_type": "application/vnd.zpl",
-                "size": len(response.body),
-                "content_base64": base64.b64encode(response.body).decode("ascii"),
-                "content_preview": response.body.decode("utf-8", errors="replace")[:500],
-            })
-        return response
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return controller(body, format=format)
 
 
 @router.post(
@@ -315,20 +270,18 @@ async def template_label_test(
     tags=["PrintJobs"],
     summary="Crear trabajo de impresión",
     description="Crea un nuevo trabajo de impresión pendiente. El worker lo procesará.",
+    response_model=CreatePrintJobResponseDTO,
 )
 async def create_print_job(
-    body: CreatePrintJobRequest,
-    controller: CreatePrintJobController = Depends(get_create_print_job_controller),
+    body: CreatePrintJobRequestDTO,
+    controller: CreatePrintJobController = Depends(container.create_print_job_controller),
 ):
-    try:
-        return controller(
-            channel=body.channel,
-            client_code=body.client_code,
-            client_name=body.client_name,
-            payload=body.payload,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return controller(
+        channel=body.channel,
+        client_code=body.client_code,
+        client_name=body.client_name,
+        payload=body.payload,
+    )
 
 
 class PrintJobResponse(BaseModel):
@@ -415,13 +368,12 @@ async def list_print_jobs(
     tags=["Printers"],
     summary="Descubrir impresoras",
     description="Usa CUPS para descubrir impresoras disponibles en el sistema.",
+    response_model=list[DiscoverPrinterResponseDTO],
 )
 async def discover_printers(
-    discovery: PrinterDiscovery = Depends(get_printer_discovery),
+    controller: DiscoverPrinterController = Depends(container.discover_printer_controller),
 ):
-    """Usa PrinterDiscovery para encontrar impresoras."""
-    use_case = DiscoverPrinterUseCase(discovery)
-    return use_case()
+    return controller()
 
 
 @router.get(
@@ -441,7 +393,7 @@ async def list_printers(repo: PrinterRepository = Depends(get_printer_repository
     description="Crea una nueva impresora con channels asociados.",
 )
 async def create_printer(
-    body: PrinterCreate,
+    body: CreatePrinterRequestDTO,
     repo: PrinterRepository = Depends(get_printer_repository),
 ):
     return repo.create_printer(body.name, body.channel_ids or [])
@@ -455,7 +407,7 @@ async def create_printer(
 )
 async def update_printer(
     printer_id: int,
-    body: PrinterUpdate,
+    body: UpdatePrinterRequestDTO,
     repo: PrinterRepository = Depends(get_printer_repository),
 ):
     printer = repo.update_printer(
@@ -621,23 +573,17 @@ async def list_channels(
     tags=["Channels"],
     summary="Crear channel",
     description="Crea un nuevo channel.",
+    response_model=CreateChannelResponseDTO,
 )
 async def create_channel(
-    body: ChannelCreate,
-    repo: ChannelRepository = Depends(get_channel_repository),
+    body: CreateChannelRequestDTO,
+    controller: CreateChannelController = Depends(container.create_channel_controller),
 ):
-    existing = repo.get_by_number(body.channel_number)
-    if existing:
-        raise HTTPException(status_code=400, detail=f"Channel {body.channel_number} ya existe")
-    
-    channel = repo.create(body.channel_number, body.description, body.template_id)
-    return {
-        "id": channel.id,
-        "channel_number": channel.channel_number,
-        "description": channel.description,
-        "is_active": channel.is_active,
-        "template_id": channel.template_id,
-    }
+    return controller(
+        channel_number=body.channel_number,
+        description=body.description,
+        template_id=body.template_id,
+    )
 
 
 @router.put(
@@ -648,7 +594,7 @@ async def create_channel(
 )
 async def update_channel(
     channel_id: int,
-    body: ChannelUpdate,
+    body: UpdateChannelRequestDTO,
     repo: ChannelRepository = Depends(get_channel_repository),
 ):
     channel = repo.update(channel_id, body.description, body.is_active, body.template_id)

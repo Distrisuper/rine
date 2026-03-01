@@ -5,5 +5,5 @@ class GetOneStatusByNameController:
     def __init__(self, use_case: GetOneStatusByNameUseCaseInterface):
         self._use_case = use_case
 
-    def __call__(self, name: str) -> dict | None:
+    def __call__(self, name: str) -> dict:
         return self._use_case(name)

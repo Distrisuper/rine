@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
 
-from infrastructure.presentation.api.routes import router
+from infrastructure.api.routes import router
+from infrastructure.api.exceptions import (
+    validation_exception_handler,
+    value_error_exception_handler,
+)
 
 app = FastAPI(
     title="RINE Print Manager API",
@@ -14,6 +19,11 @@ app = FastAPI(
         {"name": "Templates", "description": "Prueba de templates remito (PDF) y etiqueta (ZPL)"},
     ],
 )
+
+# Global exception handlers
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(ValueError, value_error_exception_handler)
+
 app.include_router(router)
 
 # Serve admin dashboard at /admin

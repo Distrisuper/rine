@@ -1,4 +1,4 @@
-from application.use_cases.hello.health.health_use_case_interface import HealthUseCaseInterface
+from application.use_cases.health.health_use_case_interface import HealthUseCaseInterface
 
 
 class HealthController:

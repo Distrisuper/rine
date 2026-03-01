@@ -4,7 +4,7 @@ Tests para endpoints de impresión.
 import unittest
 from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
-from infrastructure.presentation.main import app
+from infrastructure.api.main import app
 
 
 class TestPrintAPI(unittest.TestCase):

@@ -3,7 +3,7 @@ Tests for API endpoints.
 """
 import unittest
 from fastapi.testclient import TestClient
-from infrastructure.presentation.main import app
+from infrastructure.api.main import app
 
 class TestAPI(unittest.TestCase):
     def setUp(self):

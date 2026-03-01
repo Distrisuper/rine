@@ -2,7 +2,7 @@
 import base64
 import unittest
 from fastapi.testclient import TestClient
-from infrastructure.presentation.main import app
+from infrastructure.api.main import app
 
 
 class TestTemplatesRemitoAPI(unittest.TestCase):

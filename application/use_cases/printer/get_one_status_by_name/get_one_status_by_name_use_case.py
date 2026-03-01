@@ -5,5 +5,8 @@ class GetOneStatusByNameUseCase(GetOneStatusByNameUseCaseInterface):
     def __init__(self, discovery):
         self._discovery = discovery
 
-    def __call__(self, name: str) -> dict | None:
-        return self._discovery.get_printer_status(name)
+    def __call__(self, name: str) -> dict:
+        data = self._discovery.get_printer_status(name)
+        if data is None:
+            raise ValueError("Impresora no encontrada o CUPS no disponible")
+        return data
