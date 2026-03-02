@@ -23,6 +23,7 @@ def upgrade() -> None:
         'printer_channels',
         Column('printer_id', Integer, ForeignKey('printers.id'), primary_key=True),
         Column('channel', Integer, primary_key=True),
+        Column('channel_id', Integer, nullable=True),
         Column('description', String, nullable=True),
         Column('is_active', Boolean, nullable=False, server_default='1'),
     )

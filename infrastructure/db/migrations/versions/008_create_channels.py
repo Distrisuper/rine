@@ -27,7 +27,13 @@ def upgrade() -> None:
         Column('is_active', Boolean, nullable=False, server_default='1'),
         Column('created_at', DateTime, server_default=func.now()),
     )
+    op.create_foreign_key(
+        'fk_printer_channels_channel_id',
+        'printer_channels', 'channels',
+        ['channel_id'], ['id'],
+    )
 
 
 def downgrade() -> None:
+    op.drop_constraint('fk_printer_channels_channel_id', 'printer_channels', type_='foreignkey')
     op.drop_table('channels')
