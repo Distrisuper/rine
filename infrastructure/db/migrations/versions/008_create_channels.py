@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, func
 
 
 revision: str = '008'
@@ -25,9 +25,12 @@ def upgrade() -> None:
         Column('channel_number', Integer, nullable=False, unique=True),
         Column('description', String, nullable=True),
         Column('is_active', Boolean, nullable=False, server_default='1'),
+        Column('template_id', Integer, ForeignKey('templates.id'), nullable=True),
         Column('created_at', DateTime, server_default=func.now()),
     )
+    op.create_index('ix_channels_template_id', 'channels', ['template_id'])
 
 
 def downgrade() -> None:
+    op.drop_index('ix_channels_template_id', table_name='channels')
     op.drop_table('channels')
