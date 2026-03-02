@@ -1,4 +1,5 @@
 import pytest
+import json
 from fastapi import status
 from infrastructure.repositories.channel_repository import ChannelRepository
 from infrastructure.repositories.template_repository import TemplateRepository
@@ -9,30 +10,29 @@ def test_preview_remito_success(client):
     template_repo = TemplateRepository(engine)
     channel_repo = ChannelRepository(engine)
     
-    # Use existing template file with prefix
+    # Usamos el path real que existe en el proyecto
     template = template_repo.create(name="Base Remito", file_path="remitos/base_remito.html")
     channel_repo.create(channel_number=4, description="Channel for Remitos", template_id=template.id)
     
-    # Extra data for remito needs to be a JSON string that RemitoRenderData can parse
-    extra_data = {
-        "remito_id": "R-0001",
-        "fecha": "01/03/2026",
-        "reparto": "R1",
-        "sucursal": "S1",
-        "items": [
-            {"codigo": "P1", "cantidad": 10, "descripcion": "Product 1"}
-        ],
-        "total": 1500.50
-    }
+    # Datos del remito para Query String
+    items = [
+        {"codigo": "P1", "cantidad": 10, "descripcion": "Product 1"}
+    ]
     
-    payload = {
-        "channel": 4,
+    params = {
         "client_code": "TEST_REM",
         "client_name": "Test Remito Client",
-        "extra_data": str(extra_data).replace("'", '"') # Ensure valid JSON string
+        "order_number": 12345,
+        "address": "Calle Falsa 123",
+        "city": "CABA",
+        "items": json.dumps(items),
+        "total": 1500.50,
+        "remito_id": "R-0001",
+        "fecha": "01/03/2026"
     }
     
-    response = client.post("/templates/remito/preview", json=payload)
+    # Llamamos vía GET como define routes.py
+    response = client.get("/templates/preview/remito/4", params=params)
     
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/pdf"
@@ -45,15 +45,11 @@ def test_preview_remito_wrong_template_type(client):
     channel_repo = ChannelRepository(engine)
     
     template = template_repo.create(name="Zebra ZPL", file_path="labels/zebra_label.zpl")
-    # Use channel 4 (allowed by resolver) but associate a ZPL template
+    # Asociamos un ZPL a un canal de remito
     channel_repo.create(channel_number=4, description="Channel for ZPL", template_id=template.id)
     
-    payload = {
-        "channel": 4,
-        "client_code": "TEST_ERR"
-    }
+    response = client.get("/templates/preview/remito/4")
     
-    response = client.post("/templates/remito/preview", json=payload)
-    
+    # El caso de uso lanza ValueError si el template no termina en .html
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "no está configurado con una plantilla de remitos" in response.json()["detail"]

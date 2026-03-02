@@ -1,14 +1,14 @@
 import json
 import random
 from typing import Any, Dict
-from application.use_cases.printer.test.test_printer_use_case_interface import TestPrinterUseCaseInterface
+from application.use_cases.printer.print_test_page.print_test_page_use_case_interface import PrintTestPageUseCaseInterface
 from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
 from domain.repositories.channel_repository_interface import ChannelRepositoryInterface
 from domain.repositories.template_repository_interface import TemplateRepositoryInterface
 from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
 from domain.entities.print_job import PrintJob
 
-class TestPrinterUseCase(TestPrinterUseCaseInterface):
+class PrintTestPageUseCase(PrintTestPageUseCaseInterface):
     def __init__(
         self,
         printer_repo: PrinterRepositoryInterface,

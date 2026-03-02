@@ -2,7 +2,7 @@ import pytest
 from fastapi import status
 
 def test_example_flow_success(client):
-    response = client.get("/")
+    response = client.get("/example")
     
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

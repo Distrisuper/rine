@@ -1,7 +1,7 @@
 from application.use_cases.print_jobs.print.print_job_use_case_interface import (
     PrintJobUseCaseInterface,
 )
-from infrastructure.print_job_service import print_pdf_to_printer, print_raw_to_printer
+from infrastructure.services.print_job_service import print_pdf_to_printer, print_raw_to_printer
 
 
 class PrintJobUseCase(PrintJobUseCaseInterface):

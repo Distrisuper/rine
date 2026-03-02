@@ -10,9 +10,7 @@ def test_delete_channel_success(client):
     
     response = client.delete(f"/channels/{channel.id}")
     
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()["status"] == "deleted"
-    assert response.json()["id"] == channel.id
+    assert response.status_code == status.HTTP_204_NO_CONTENT
     
     # Verificar que ya no existe
     assert channel_repo.get_by_id(channel.id) is None

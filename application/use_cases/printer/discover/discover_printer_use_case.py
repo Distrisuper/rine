@@ -1,6 +1,6 @@
 from typing import Any
 
-from domain.services.printer_discovery import PrinterDiscovery
+from domain.services.printer_discovery_interface import PrinterDiscovery
 from application.use_cases.printer.discover.discover_printer_use_case_interface import (
     DiscoverPrinterUseCaseInterface,
 )

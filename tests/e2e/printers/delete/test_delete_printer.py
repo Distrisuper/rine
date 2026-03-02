@@ -16,8 +16,7 @@ def test_delete_printer_success(client):
     
     response = client.delete(f"/printers/{printer_id}")
     
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()["status"] == "deleted"
+    assert response.status_code == status.HTTP_204_NO_CONTENT
     
     # Verificar en DB que no existe la impresora
     with Session(engine) as session:

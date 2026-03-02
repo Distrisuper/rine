@@ -1,4 +1,4 @@
-from domain.services.printer_discovery import PrinterDiscovery
+from domain.services.printer_discovery_interface import PrinterDiscovery
 from application.use_cases.printer.get_one_status_by_name.get_one_status_by_name_use_case_interface import GetOneStatusByNameUseCaseInterface
 
 

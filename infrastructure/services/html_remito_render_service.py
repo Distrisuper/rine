@@ -9,7 +9,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from weasyprint import HTML
 
-from domain.services.remito_renderer import RemitoRenderer
+from domain.services.remito_renderer_interface import RemitoRenderer
 from domain.value_objects import RemitoRenderData
 from domain.services.barcode_service_interface import BarcodeServiceInterface
 
@@ -74,8 +74,8 @@ class HtmlRemitoRenderer(RemitoRenderer):
     ):
         self._barcode_service = barcode_service
         if templates_dir is None:
-            # Apuntamos a infrastructure/templates/ como raíz
-            templates_dir = Path(__file__).resolve().parent / "templates"
+            # Al estar en infrastructure/services/, subimos dos niveles para llegar a infrastructure/
+            templates_dir = Path(__file__).resolve().parent.parent / "templates"
         self._templates_dir = Path(templates_dir)
         self._env = Environment(
             loader=FileSystemLoader(str(self._templates_dir)),

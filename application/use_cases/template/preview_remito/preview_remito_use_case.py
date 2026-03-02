@@ -15,7 +15,7 @@ class PreviewRemitoUseCase(PreviewRemitoUseCaseInterface):
         self._template_repo = template_repo
 
     def __call__(self, body) -> bytes:
-        # Validar canal dinámicamente desde la DB
+        # 1. Obtener canal y validar
         channel = self._channel_repo.get_by_number(body.channel)
         if not channel:
             raise ValueError(f"El canal {body.channel} no existe")
@@ -23,11 +23,16 @@ class PreviewRemitoUseCase(PreviewRemitoUseCaseInterface):
         if not channel.template_id:
             raise ValueError(f"El canal {body.channel} no tiene una plantilla asociada")
             
+        # 2. Obtener template real de la DB
         template = self._template_repo.get_by_id(channel.template_id)
-        if not template or not template.file_path.lower().endswith(".html"):
+        if not template:
+            raise ValueError(f"La plantilla con ID {channel.template_id} no existe")
+
+        # VALIDACIÓN: Debe ser .html
+        if not template.file_path.lower().endswith(".html"):
             raise ValueError(f"El canal {body.channel} no está configurado con una plantilla de remitos (.html)")
-        
-        # Mapeo manual de DTO a QueueItem
+
+        # 3. Mapeo a QueueItem
         item = QueueItem(
             id=0,
             client_id="",
@@ -57,4 +62,5 @@ class PreviewRemitoUseCase(PreviewRemitoUseCaseInterface):
             ds=body.ds
         )
         
-        return self._template_service.render(item)
+        # 4. Renderizar usando el file_path de la DB
+        return self._template_service.render(item, template.file_path)

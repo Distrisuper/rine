@@ -22,10 +22,7 @@ shell:
 	docker compose run --rm app /bin/sh
 
 test:
-	docker compose run --rm app python -m unittest discover -s tests
-
-test-ci:
-	docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+	docker compose run --rm -e PYTHONPATH=/app test python -m pytest . -v
 
 test-local:
-	python -m unittest discover -s tests
+	python -m pytest . -v

@@ -17,7 +17,7 @@ import logging
 import os
 from typing import Any
 
-from domain.services.printer_discovery import PrinterDiscovery
+from domain.services.printer_discovery_interface import PrinterDiscovery
 
 logger = logging.getLogger(__name__)
 
