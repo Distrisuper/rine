@@ -60,25 +60,27 @@ docker compose down
 
 La API queda disponible en http://localhost:8000.
 
+
+La UI de configuracion queda disponible en http://localhost:8000/admin.
+
 ## Tests
 
 Ejecución en contenedor (recomendado):
 
 ```bash
-docker compose run --rm app python -m unittest discover -s tests
+docker compose run --rm -e PYTHONPATH=/app test python -m pytest . -v
 ```
 
 Ejecución reproducible estilo CI:
 
 ```bash
-docker compose -f docker-compose.yml run --rm test
+docker compose run --rm -e PYTHONPATH=/app test python -m pytest . -v
 ```
 
 Si tenés Make instalado:
 
 ```bash
 make test
-make test-ci
 ```
 
 ## Estructura
