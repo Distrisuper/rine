@@ -90,7 +90,7 @@ class PrintJob(SQLModel, table=True):
         from jinja2 import Template
         from pathlib import Path
 
-        template_path = Path(f"/app/templates/{file_path}")
+        template_path = Path(f"/app/infrastructure/templates/{file_path}")
         if not template_path.exists():
             raise FileNotFoundError(f"Template ZPL no encontrado: {file_path}")
 
@@ -113,7 +113,7 @@ class PrintJob(SQLModel, table=True):
 
         barcode_service = BarcodeService()
 
-        template_path = Path(f"/app/templates/{file_path}")
+        template_path = Path(f"/app/infrastructure/templates/{file_path}")
         if not template_path.exists():
             return self._placeholder_pdf()
 
