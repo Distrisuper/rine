@@ -10,8 +10,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import Column, Integer, String, DateTime, Text, Index
-from datetime import datetime
-
 
 # revision identifiers, used by Alembic.
 revision: str = '001'
@@ -31,7 +29,7 @@ def upgrade() -> None:
         Column('status', String, nullable=False, server_default='pending'),
         Column('print_count', Integer, nullable=False, server_default='0'),
         Column('host', Integer, nullable=True),
-        Column('date_created', DateTime, nullable=False, server_default=str(datetime.utcnow())),
+        Column('date_created', DateTime, nullable=False, server_default=sa.func.now()),
         Column('date_started', DateTime, nullable=True),
         Column('date_processed', DateTime, nullable=True),
         Column('payload', Text, nullable=False),
