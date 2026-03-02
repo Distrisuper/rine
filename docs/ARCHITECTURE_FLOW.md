@@ -109,6 +109,49 @@ def init_create_printer_controller(self) -> CreatePrinterController:
 
 ---
 
+## 📂 Mapa de Estructura (Project Tree)
+
+Esta es la organización del código basada en los niveles de abstracción:
+
+```text
+rine/
+├── domain/                     # 🧠 EL NÚCLEO (Pureza absoluta)
+│   ├── entities/               # Objetos con identidad propia (ej: PrintJob, Printer).
+│   ├── value_objects/          # Datos inmutables (ej: RenderData, ExtraData).
+│   ├── repositories/           # INTERFACES (Contratos) que definen cómo se guardan los datos.
+│   └── services/               # INTERFACES (Contratos) de lógica compleja o externa (ej: Renderers).
+│
+├── application/                # ⚙️ ORQUESTACIÓN (Casos de Uso)
+│   └── use_cases/              # Aquí vive el "QUÉ" hace el sistema. 
+│       └── [modulo]/           # Ej: 'printer', 'channels'.
+│           ├── interface.py    # Contrato del caso de uso para el controlador.
+│           └── use_case.py     # Implementación que coordina Repos y Servicios de Dominio.
+│
+├── infrastructure/             # 🛠️ DETALLES TÉCNICOS (El mundo exterior)
+│   ├── api/                    # Punto de entrada: Routes, Main y el Container (DI).
+│   ├── controllers/            # 🌉 EL PUENTE: Transforma peticiones HTTP en llamadas al Caso de Uso.
+│   ├── dtos/                   # 📄 CONTRATOS API: Esquemas Pydantic de entrada y salida (Validación).
+│   ├── repositories/           # IMPLEMENTACIÓN DB: Código real de SQLModel / SQLAlchemy.
+│   ├── services/               # IMPLEMENTACIÓN EXTERNA: Lógica de hardware, PDF, CUPS, etc.
+│   └── db/                     # Configuración de base de datos y migraciones (Alembic).
+│
+├── workers/                    # 👷 TRABAJADORES DE FONDO
+│   └── print_worker.py         # Procesos que consumen la cola de DB y ejecutan acciones físicas.
+│
+├── tests/                      # 🧪 VALIDACIÓN
+│   ├── e2e/                    # Pruebas de caja negra (Peticiones HTTP a la API real).
+│   └── unit/                   # Pruebas de lógica de dominio (Sin bases de datos).
+```
+
+### Explicación de los niveles:
+
+1.  **Nivel `domain` (Interfaces):** Es lo más importante. Si cambias de base de datos o de framework, este nivel **no se toca**. Aquí se define **el lenguaje** del negocio.
+2.  **Nivel `application` (Lógica):** Es el cerebro. No sabe que existe una API o una Web; solo sabe que para "Imprimir un Remito" necesita un `Repository` y un `Renderer`.
+3.  **Nivel `infrastructure` (Implementación):** Aquí es donde "enchufamos" las herramientas. Si mañana queremos usar PostgreSQL en lugar de SQLite, solo cambiamos el archivo en `infrastructure/repositories/`.
+4.  **Nivel `api/routes`:** Es el despachador de tráfico. Solo recibe la llamada y la pasa al controlador correspondiente.
+
+---
+
 ## ✅ Checklist para nuevos Endpoints
 
 1. [ ] ¿Creaste los **DTOs** de entrada/salida?
