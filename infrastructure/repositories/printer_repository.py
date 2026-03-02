@@ -47,7 +47,9 @@ class PrinterRepository(PrinterRepositoryInterface):
         with Session(self.engine) as session:
             return session.get(Printer, printer_id)
 
-    def create_printer(self, name: str, channel_ids: list[int] = []) -> dict:
+    def create_printer(self, name: str, channel_ids: Optional[list[int]] = None) -> dict:
+        if channel_ids is None:
+            channel_ids = []
         with Session(self.engine) as session:
             printer = Printer(name=name)
             session.add(printer)
