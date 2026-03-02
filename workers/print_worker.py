@@ -89,13 +89,13 @@ class PrintWorker:
             )
             .order_by(PrintJob.date_created)
             .limit(1)
+            .with_for_update(skip_locked=True)
         )
 
         job = session.exec(statement).first()
 
         if job:
             job.processing_since = datetime.utcnow()
-            session.commit()
 
         return job
 
