@@ -49,5 +49,5 @@ def test_update_printer_not_found(client):
     payload = {"name": "No existo"}
     response = client.put("/printers/9999", json=payload)
     
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "no encontrada" in response.json()["detail"].lower()
