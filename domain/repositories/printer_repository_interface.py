@@ -17,7 +17,7 @@ class PrinterRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def create_printer(self, name: str, channel_ids: List[int] = []) -> dict:
+    def create_printer(self, name: str, channel_ids: Optional[List[int]] = None) -> dict:
         pass
 
     @abstractmethod
