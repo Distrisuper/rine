@@ -6,7 +6,6 @@ import json
 from domain.value_objects import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
 from domain.entities.template import Template
-from infrastructure.db.database import engine
 
 
 class PrintJob(SQLModel, table=True):
@@ -32,17 +31,16 @@ class PrintJob(SQLModel, table=True):
     processing_since: Optional[datetime] = None
     cups_job_id: Optional[int] = Field(default=None)
 
-    def get_template(self) -> Template | None:
-        with Session(engine) as session:
-            channel = session.exec(
-                select(Channel).where(Channel.channel_number == self.channel)
-            ).first()
-            if not channel or not channel.template_id:
-                return None
-            return session.get(Template, channel.template_id)
+    def get_template(self, session: Session) -> Template | None:
+        channel = session.exec(
+            select(Channel).where(Channel.channel_number == self.channel)
+        ).first()
+        if not channel or not channel.template_id:
+            return None
+        return session.get(Template, channel.template_id)
 
-    def render(self) -> bytes:
-        template = self.get_template()
+    def render(self, session: Session) -> bytes:
+        template = self.get_template(session)
         if not template:
             raise ValueError(f"No hay template configurado para channel {self.channel}")
 
