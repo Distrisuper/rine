@@ -7,7 +7,7 @@ class UpdatePrinterController:
         self._use_case = use_case
 
     def __call__(self, printer_id: int, name: str = '', is_active: Optional[bool] = None, channel_ids: Optional[List[int]] = None) -> dict:
-        printer = self._use_case(printer_id, name, is_active, channel_ids)
-        if not printer:
-            raise HTTPException(status_code=404, detail="Impresora no encontrada")
-        return printer
+        try:
+            return self._use_case(printer_id, name, is_active, channel_ids)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
