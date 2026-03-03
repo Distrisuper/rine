@@ -14,6 +14,8 @@ def test_status_worker_updates_to_printed(test_engine):
             client_name="Status Test",
             channel=1,
             status="sent",
+            number_of_copies=1,
+            attempt_count=0,
             cups_job_id=888,
             printer_name="Test Printer",
             payload='{}'

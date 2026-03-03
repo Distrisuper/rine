@@ -21,7 +21,8 @@ class QueueItem(BaseModel):
     retry: int
     priority: int
     printed: int
-    print_count: int
+    number_of_copies: int = 1
+    attempt_count: int = 0
     host: int
     redi_code: str
     redi_id: int

@@ -26,6 +26,8 @@ def test_status_worker_marks_job_as_printed(test_engine, mock_cups_status):
         channel=10,
         payload='{}',
         status="sent",
+        number_of_copies=1,
+        attempt_count=0,
         cups_job_id=12345,
         printer_name="TestPrinter"
     )
@@ -55,6 +57,8 @@ def test_status_worker_handles_failed_job_in_cups(test_engine, mock_cups_status)
         channel=10,
         payload='{}',
         status="sent",
+        number_of_copies=1,
+        attempt_count=0,
         cups_job_id=67890,
         printer_name="TestPrinter"
     )
@@ -82,6 +86,8 @@ def test_status_worker_stays_sent_if_still_processing(test_engine, mock_cups_sta
         channel=10,
         payload='{}',
         status="sent",
+        number_of_copies=1,
+        attempt_count=0,
         cups_job_id=55555,
         printer_name="TestPrinter"
     )

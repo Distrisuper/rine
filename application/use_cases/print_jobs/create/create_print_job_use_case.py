@@ -17,13 +17,16 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
         client_name: str,
         payload: dict,
     ) -> dict:
+        number_of_copies = payload.get("number_of_copies", 1)
+        
         job = PrintJob(
             client_code=client_code,
             client_name=client_name,
             channel=channel,
             payload=json.dumps(payload),
             status="pending",
-            print_count=0,
+            number_of_copies=number_of_copies,
+            attempt_count=0,
             date_created=datetime.utcnow(),
         )
 
@@ -35,7 +38,8 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
             "client_name": saved_job.client_name,
             "channel": saved_job.channel,
             "status": saved_job.status,
-            "print_count": saved_job.print_count,
+            "number_of_copies": saved_job.number_of_copies,
+            "attempt_count": saved_job.attempt_count,
             "print_type": saved_job.print_type,
             "date_created": saved_job.date_created,
             "date_started": saved_job.date_started,

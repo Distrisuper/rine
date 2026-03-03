@@ -25,16 +25,19 @@ def upgrade() -> None:
         Column('client_id', String, nullable=True),
         Column('client_code', String, nullable=False),
         Column('client_name', String, nullable=False),
-        Column('print_type', String, nullable=False),
+        Column('channel', Integer, nullable=False),
+        Column('payload', Text, nullable=False),
         Column('status', String, nullable=False, server_default='pending'),
-        Column('print_count', Integer, nullable=False, server_default='0'),
-        Column('host', Integer, nullable=True),
+        Column('number_of_copies', Integer, nullable=False, server_default='1'),
+        Column('attempt_count', Integer, nullable=False, server_default='0'),
+        Column('print_type', String, nullable=True),
         Column('date_created', DateTime, nullable=False, server_default=sa.func.now()),
         Column('date_started', DateTime, nullable=True),
         Column('date_processed', DateTime, nullable=True),
-        Column('payload', Text, nullable=False),
         Column('printer_name', String, nullable=True),
         Column('error_message', Text, nullable=True),
+        Column('processing_since', DateTime, nullable=True),
+        Column('cups_job_id', Integer, nullable=True),
     )
     
     op.create_index(

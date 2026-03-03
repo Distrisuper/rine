@@ -21,7 +21,8 @@ class PrintJob(SQLModel, table=True):
     channel: int
     payload: str  # JSON
     status: str = "pending"
-    print_count: int = 0
+    number_of_copies: int = 1
+    attempt_count: int = 0
     print_type: Optional[str] = None
     date_created: datetime = Field(default_factory=datetime.utcnow)
     date_started: Optional[datetime] = None

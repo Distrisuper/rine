@@ -51,11 +51,12 @@ class PrintTestPageUseCase(PrintTestPageUseCaseInterface):
                 channel=ch["channel_number"],
                 payload=json.dumps(payload),
                 status="pending",
-                print_count=0,
+                number_of_copies=1,
+                attempt_count=0,
             )
             
             saved_job = self._print_job_repo.create(job)
-
+            
             created_jobs.append({
                 "id": saved_job.id,
                 "channel": ch["channel_number"],

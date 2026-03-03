@@ -8,7 +8,8 @@ class PrintJobResponseDTO(BaseModel):
     client_name: str
     channel: int
     status: str
-    print_count: int
+    number_of_copies: int
+    attempt_count: int = 0
     print_type: Optional[str] = None
     date_created: Optional[datetime] = None
     date_started: Optional[datetime] = None
