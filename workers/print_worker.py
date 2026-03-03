@@ -52,9 +52,9 @@ class PrintWorker:
                 if not printer.is_active:
                     raise Exception(f"Impresora {printer.name} está inactiva")
 
-                content = job.render()
+                content = job.render(session)
 
-                template = job.get_template()
+                template = job.get_template(session)
                 content_type = "pdf"
                 job_title = "PrintJob"
                 if template and template.file_path.lower().endswith(".zpl"):
