@@ -5,7 +5,7 @@ class RemitoRenderData(BaseModel):
     """Datos completos para renderizar un remito (PDF)."""
     client_name: str = ""
     client_code: str = ""
-    order_number: str = ""
+    order_number: int = 0
     address: str = ""
     city: str = ""
     items: List[dict] = []
