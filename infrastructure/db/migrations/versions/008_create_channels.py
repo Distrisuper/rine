@@ -32,5 +32,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index('ix_channels_template_id', table_name='channels')
+    try:
+        op.drop_index('ix_channels_template_id', table_name='channels')
+    except Exception:
+        pass
     op.drop_table('channels')

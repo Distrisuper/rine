@@ -26,3 +26,6 @@ test:
 
 test-local:
 	python -m pytest . -v
+
+db-migrate:
+	docker compose run --rm app alembic upgrade head
