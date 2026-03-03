@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 import base64
 import json
+import os
 from pathlib import Path
 
 import httpx
@@ -77,17 +78,30 @@ class PrintJob(SQLModel, table=True):
             return base64.b64decode(pdf_base64)
 
         if pdf_url := data.get("pdf_url") or extra.get("pdf_url"):
-            with httpx.Client() as client:
-                resp = client.get(pdf_url)
-                resp.raise_for_status()
-                return resp.content
+            return self._download_pdf(pdf_url)
 
-        pdf_path = (
-            data.get("pdf_path")
-            or data.get("ftp_filename")
+        ftp_filename = (
+            data.get("ftp_filename")
             or extra.get("ftp_filename")
-            or extra.get("pdf_path")
         )
+        if ftp_filename:
+            s3_base = os.getenv("RINE_CH2_S3_BASE_URL", "").rstrip("/")
+            if s3_base:
+                pdf_url = f"{s3_base}/{ftp_filename.lstrip('/')}"
+                return self._download_pdf(pdf_url)
+            path = Path(ftp_filename)
+            if path.is_absolute():
+                full_path = path
+            else:
+                full_path = Path("/app/infrastructure/data/pdfs") / path
+            if full_path.exists():
+                return full_path.read_bytes()
+            raise FileNotFoundError(
+                f"PDF no encontrado: {full_path}. "
+                "Para S3, configurá RINE_CH2_S3_BASE_URL."
+            )
+
+        pdf_path = data.get("pdf_path") or extra.get("pdf_path")
         if pdf_path:
             path = Path(pdf_path)
             if path.is_absolute():
@@ -99,8 +113,14 @@ class PrintJob(SQLModel, table=True):
             return full_path.read_bytes()
 
         raise ValueError(
-            "Payload debe contener pdf_base64, pdf_url o pdf_path/ftp_filename para channel sin template"
+            "Payload debe contener pdf_base64, pdf_url, ftp_filename o pdf_path para channel sin template"
         )
+
+    def _download_pdf(self, url: str) -> bytes:
+        with httpx.Client() as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            return resp.content
 
     def get_render_data_label(self) -> LabelRenderData:
         data = json.loads(self.payload)

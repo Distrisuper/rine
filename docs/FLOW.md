@@ -126,7 +126,10 @@ Para channels sin template (ej. channel 2), el payload debe contener una de:
 |-------|-------------|
 | `pdf_base64` | PDF codificado en base64 |
 | `pdf_url` | URL HTTP/HTTPS para descargar el PDF |
-| `pdf_path` / `ftp_filename` | Ruta local (absoluta o relativa a `/app/infrastructure/data/pdfs`) |
+| `ftp_filename` | Nombre/relativo del archivo. Si `RINE_CH2_S3_BASE_URL` está configurado, se construye la URL S3 y se descarga. Si no, se busca como ruta local. |
+| `pdf_path` | Ruta local (absoluta o relativa a `/app/infrastructure/data/pdfs`) |
+
+**Compatibilidad con legacy (PrinterFact):** `extra_data.ftp_filename` se usa igual. Configurar `RINE_CH2_S3_BASE_URL` con la base del bucket S3 (ej. `https://bucket.s3.region.amazonaws.com/remitos-fricrot/Uploaded`).
 
 ---
 

@@ -1,3 +1,4 @@
+const API_BASE = window.location.origin;
 const API_CHANNELS = '/channels';
 const API_PRINTERS = '/printers';
 const API_PRINTERS_DISCOVER = '/printers/discover';
@@ -109,8 +110,7 @@ async function showChannelModal(id = null, channelNumber = '', description = '',
         console.error('Error cargando templates:', error);
     }
     
-    // Si es nuevo, hacer required el template
-    templateSelect.required = !id;
+    // Template opcional (channel 2 = PDF pre-generados no usa template)
 }
 
 function closeChannelModal() {
@@ -157,15 +157,30 @@ document.getElementById('channel-form').addEventListener('submit', async (e) => 
             });
         }
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Error al guardar');
+            const err = await response.json().catch(() => ({}));
+            const msg = formatApiError(err.detail);
+            throw new Error(msg);
         }
         closeChannelModal();
         loadChannels();
     } catch (error) {
-        alert('Error: ' + error.message);
+        const msg = error.message === 'Failed to fetch'
+            ? `No se pudo conectar con el servidor. Verificá que la API esté corriendo en ${API_BASE}`
+            : error.message;
+        alert('Error: ' + msg);
     }
 });
+
+function formatApiError(detail) {
+    if (!detail) return 'Error al guardar';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+        const first = detail[0];
+        const loc = (first.loc || []).slice(1).join('.');
+        return first.msg + (loc ? ` (${loc})` : '');
+    }
+    return 'Error al guardar';
+}
 
 // ============ PRINTERS ============
 
