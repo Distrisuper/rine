@@ -1,7 +1,11 @@
 from sqlmodel import SQLModel, Field, Index, Session, select
 from datetime import datetime
 from typing import Optional
+import base64
 import json
+from pathlib import Path
+
+import httpx
 
 from domain.value_objects import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
@@ -41,7 +45,7 @@ class PrintJob(SQLModel, table=True):
     def render(self, session: Session) -> bytes:
         template = self.get_template(session)
         if not template:
-            raise ValueError(f"No hay template configurado para channel {self.channel}")
+            return self._get_pdf_from_payload()
 
         file_path = template.file_path
 
@@ -51,6 +55,52 @@ class PrintJob(SQLModel, table=True):
             return self._render_remito(self.get_render_data_remito(), file_path)
 
         raise ValueError(f"Template no soportado: {file_path}")
+
+    def _get_pdf_from_payload(self) -> bytes:
+        """
+        Obtiene bytes PDF desde el payload. Para channels sin template (ej. channel 2).
+        Soporta: pdf_base64, pdf_url, pdf_path/ftp_filename (ruta local).
+        """
+        data = json.loads(self.payload)
+        if not isinstance(data, dict):
+            raise ValueError("Payload debe ser un objeto JSON")
+
+        extra = data.get("extra_data")
+        if isinstance(extra, str):
+            try:
+                extra = json.loads(extra) if extra.strip() else {}
+            except json.JSONDecodeError:
+                extra = {}
+        extra = extra if isinstance(extra, dict) else {}
+
+        if pdf_base64 := data.get("pdf_base64") or extra.get("pdf_base64"):
+            return base64.b64decode(pdf_base64)
+
+        if pdf_url := data.get("pdf_url") or extra.get("pdf_url"):
+            with httpx.Client() as client:
+                resp = client.get(pdf_url)
+                resp.raise_for_status()
+                return resp.content
+
+        pdf_path = (
+            data.get("pdf_path")
+            or data.get("ftp_filename")
+            or extra.get("ftp_filename")
+            or extra.get("pdf_path")
+        )
+        if pdf_path:
+            path = Path(pdf_path)
+            if path.is_absolute():
+                full_path = path
+            else:
+                full_path = Path("/app/infrastructure/data/pdfs") / path
+            if not full_path.exists():
+                raise FileNotFoundError(f"PDF no encontrado: {full_path}")
+            return full_path.read_bytes()
+
+        raise ValueError(
+            "Payload debe contener pdf_base64, pdf_url o pdf_path/ftp_filename para channel sin template"
+        )
 
     def get_render_data_label(self) -> LabelRenderData:
         data = json.loads(self.payload)

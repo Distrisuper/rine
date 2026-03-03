@@ -1,3 +1,5 @@
+from typing import Optional
+
 from application.use_cases.channels.create.create_channel_use_case_interface import (
     CreateChannelUseCaseInterface,
 )
@@ -7,7 +9,7 @@ class CreateChannelController:
     def __init__(self, use_case: CreateChannelUseCaseInterface):
         self._use_case = use_case
 
-    def __call__(self, channel_number: int, description: str | None, template_id: int) -> dict:
+    def __call__(self, channel_number: int, description: str | None, template_id: Optional[int]) -> dict:
         return self._use_case(
             channel_number=channel_number,
             description=description,

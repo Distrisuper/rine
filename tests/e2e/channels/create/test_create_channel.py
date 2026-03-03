@@ -23,6 +23,23 @@ def test_create_channel_success(client):
     assert data["template_id"] == template.id
     assert "id" in data
 
+
+def test_create_channel_without_template(client):
+    """Channel sin template (ej. channel 2 para PDF pre-generados)."""
+    payload = {
+        "channel_number": 2,
+        "description": "PDF pre-generados (GM)",
+        "template_id": None
+    }
+    
+    response = client.post("/channels", json=payload)
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["channel_number"] == 2
+    assert data["description"] == "PDF pre-generados (GM)"
+    assert data["template_id"] is None
+
 def test_create_channel_duplicate_error(client):
     # Setup: Crear un template y un canal primero
     template_repo = TemplateRepository(engine)

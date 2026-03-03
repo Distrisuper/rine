@@ -56,7 +56,7 @@ class PrintWorker:
 
                 template = job.get_template(session)
                 content_type = "pdf"
-                job_title = "PrintJob"
+                job_title = "PDF" if not template else "PrintJob"
                 if template and template.file_path.lower().endswith(".zpl"):
                     content_type = "zpl"
                     job_title = "Etiqueta"

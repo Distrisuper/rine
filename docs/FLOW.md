@@ -31,20 +31,26 @@ flowchart TB
 
     subgraph RENDER["4. RENDERIZADO"]
         RH1["PrintJob.render()"]
-        RH2{file_path<br/>extension?}
+        RH2{template?}
+        RH2A{file_path<br/>extension?}
         RH3["<b>.zpl</b><br/>→ _render_label()"]
         RH4["<b>.html</b><br/>→ _render_remito()"]
-        RH5["Jinja2 template"]
-        RH6["Jinja2 + WeasyPrint<br/>+ BarcodeService"]
+        RH5["<b>sin template</b><br/>→ _get_pdf_from_payload()"]
+        RH6["Jinja2 template"]
+        RH7["Jinja2 + WeasyPrint<br/>+ BarcodeService"]
         RH1 --> RH2
-        RH2 -->|".zpl"| RH3 --> RH5 --> ZPL[("ZPL bytes")]
-        RH2 -->|".html"| RH4 --> RH6 --> PDF[("PDF bytes")]
+        RH2 -->|"template"| RH2A
+        RH2 -->|"sin template<br/>(channel 2)"| RH5 --> PDF2[("PDF bytes")]
+        RH2A -->|".zpl"| RH3 --> RH6 --> ZPL[("ZPL bytes")]
+        RH2A -->|".html"| RH4 --> RH7 --> PDF[("PDF bytes")]
         
         subgraph DATA["Parse payload"]
             D1["get_render_data_label()"]
             D2["get_render_data_remito()"]
+            D3["pdf_base64 / pdf_url / pdf_path"]
             RH3 --> D1
             RH4 --> D2
+            RH5 --> D3
         end
     end
 
@@ -101,12 +107,26 @@ print_job.render()
     │       │
     │       └── Query: Channel → template_id → Template
     │
-    └── if template.file_path.endswith('.zpl'):
+    ├── if not template (channel sin template, ej. channel 2):
+    │       └── _get_pdf_from_payload() → PDF bytes
+    │             (pdf_base64 | pdf_url | pdf_path/ftp_filename)
+    │
+    ├── elif template.file_path.endswith('.zpl'):
     │       └── _render_label() → ZPL bytes
     │
     └── elif template.file_path.endswith('.html'):
             └── _render_remito() → PDF bytes (via WeasyPrint)
 ```
+
+### Channel 2: PDF pre-generados
+
+Para channels sin template (ej. channel 2), el payload debe contener una de:
+
+| Campo | Descripción |
+|-------|-------------|
+| `pdf_base64` | PDF codificado en base64 |
+| `pdf_url` | URL HTTP/HTTPS para descargar el PDF |
+| `pdf_path` / `ftp_filename` | Ruta local (absoluta o relativa a `/app/infrastructure/data/pdfs`) |
 
 ---
 
