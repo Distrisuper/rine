@@ -43,3 +43,90 @@ def test_create_print_job_validation_error(client):
     
     response = client.post("/print-jobs", json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_job_copies_zero(client):
+    """number_of_copies = 0 debe ser rechazado (mínimo 1)"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123},
+        "number_of_copies": 0
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_job_copies_negative(client):
+    """number_of_copies negativo debe ser rechazado"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123},
+        "number_of_copies": -5
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_job_copies_over_100(client):
+    """number_of_copies > 100 debe ser rechazado"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123},
+        "number_of_copies": 101
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_job_copies_string(client):
+    """number_of_copies como string debe ser rechazado"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123},
+        "number_of_copies": "abc"
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_create_job_copies_valid(client):
+    """number_of_copies válido (50) debe ser aceptado"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123},
+        "number_of_copies": 50
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["number_of_copies"] == 50
+
+
+def test_create_job_default_copies(client):
+    """Sin number_of_copies debe usar default=1"""
+    payload = {
+        "channel": 1,
+        "client_code": "CL001",
+        "client_name": "Cliente Test",
+        "payload": {"order_number": 123}
+    }
+    
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["number_of_copies"] == 1

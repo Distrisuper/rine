@@ -62,7 +62,7 @@ def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render)
     assert updated_job.status == "sent"
     assert updated_job.cups_job_id == 12345
     assert updated_job.printer_name == "TestPrinter"
-    assert updated_job.print_count == 1
+    assert updated_job.attempt_count == 1
     assert updated_job.processing_since is None
 
 def test_print_worker_handles_missing_printer(test_engine, mock_render):
@@ -84,7 +84,7 @@ def test_print_worker_handles_missing_printer(test_engine, mock_render):
 
     updated_job = print_job_repo.get_by_id(job_id)
     # Should retry or fail depending on MAX_RETRIES. Default MAX_RETRIES is 3.
-    # After 1st failure, it should still be "pending" but with print_count=1 and error_message
+    # After 1st failure, it should still be "pending" but with attempt_count=1 and error_message
     assert updated_job.status == "pending"
-    assert updated_job.print_count == 1
+    assert updated_job.attempt_count == 1
     assert "No hay impresora configurada" in updated_job.error_message

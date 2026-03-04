@@ -10,5 +10,6 @@ class CreatePrintJobUseCaseInterface(ABC):
         client_code: str,
         client_name: str,
         payload: dict,
+        number_of_copies: int,
     ) -> dict:
         pass

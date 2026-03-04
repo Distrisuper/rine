@@ -438,7 +438,7 @@ async function loadPrintJobs() {
     } catch (error) {
         console.error('Error cargando print jobs:', error);
         document.getElementById('print-jobs-body').innerHTML = 
-            `<tr><td colspan="8" class="error">Error: ${error.message}</td></tr>`;
+            `<tr><td colspan="9" class="error">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -447,7 +447,7 @@ function renderPrintJobs(data) {
     const paginationInfo = document.getElementById('pagination-info');
 
     if (!data.data || data.data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty">No hay trabajos de impresión</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty">No hay trabajos de impresión</td></tr>';
         paginationInfo.textContent = '';
         return;
     }
@@ -467,7 +467,8 @@ function renderPrintJobs(data) {
                 <td>${j.channel}</td>
                 <td>${j.printer_name || '-'}</td>
                 <td><span class="status-badge ${statusClass}">${j.status}</span></td>
-                <td>${j.print_count}</td>
+                <td>${j.number_of_copies ?? 1}</td>
+                <td>${j.attempt_count ?? 0}</td>
                 <td>${j.date_created ? new Date(j.date_created).toLocaleString() : '-'}</td>
                 <td>${errorText}</td>
             </tr>

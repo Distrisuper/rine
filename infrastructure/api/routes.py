@@ -319,6 +319,7 @@ async def create_print_job(
         client_code=body.client_code,
         client_name=body.client_name,
         payload=body.payload,
+        number_of_copies=body.number_of_copies,
     )
 
 @router.post(

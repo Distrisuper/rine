@@ -40,6 +40,8 @@ class TemplateTestItem(BaseModel):
             priority=0,
             printed=0,
             print_count=1,
+            number_of_copies=1,
+            attempt_count=0,
             host=0,
             redi_code="",
             redi_id=self.redi_id,
