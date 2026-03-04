@@ -22,15 +22,20 @@ class ChannelRepository(ChannelRepositoryInterface):
             statement = select(Channel).where(Channel.channel_number == channel_number)
             return session.exec(statement).first()
 
-    def create(self, channel_number: int, description: str = None, template_id: int = None) -> Channel:
+    def create(self, channel_number: int, document_source: str, description: str = None, template_id: int = None) -> Channel:
         with Session(self.engine) as session:
-            channel = Channel(channel_number=channel_number, description=description, template_id=template_id)
+            channel = Channel(
+                channel_number=channel_number, 
+                description=description, 
+                template_id=template_id,
+                document_source=document_source
+            )
             session.add(channel)
             session.commit()
             session.refresh(channel)
             return channel
 
-    def update(self, channel_id: int, description: str = None, is_active: bool = None, template_id: int = None) -> Optional[Channel]:
+    def update(self, channel_id: int, description: str = None, is_active: bool = None, template_id: int = None, document_source: str = None) -> Optional[Channel]:
         with Session(self.engine) as session:
             channel = session.get(Channel, channel_id)
             if not channel:
@@ -42,6 +47,8 @@ class ChannelRepository(ChannelRepositoryInterface):
                 channel.is_active = is_active
             if template_id is not None:
                 channel.template_id = template_id
+            if document_source is not None:
+                channel.document_source = document_source
             
             session.commit()
             session.refresh(channel)

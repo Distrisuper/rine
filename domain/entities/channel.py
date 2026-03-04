@@ -11,4 +11,5 @@ class Channel(SQLModel, table=True):
     description: Optional[str] = None
     is_active: bool = True
     template_id: Optional[int] = Field(foreign_key="templates.id", default=None)
+    document_source: str
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -15,8 +15,8 @@ def test_list_channels_with_data(client):
     channel_repo = ChannelRepository(engine)
     
     template = template_repo.create(name="T1", file_path="t1.html")
-    channel_repo.create(channel_number=1, description="C1", template_id=template.id)
-    channel_repo.create(channel_number=2, description="C2", template_id=None)
+    channel_repo.create(channel_number=1, description="C1", template_id=template.id, document_source="INTERNAL")
+    channel_repo.create(channel_number=2, description="C2", template_id=None, document_source="S3_REMITOS_FRIC_ROT")
     
     response = client.get("/channels")
     
@@ -27,5 +27,8 @@ def test_list_channels_with_data(client):
     # Verificar orden (por channel_number según el repo)
     assert data[0]["channel_number"] == 1
     assert data[0]["template_name"] == "T1"
+    assert data[0]["document_source"] == "INTERNAL"
+    
     assert data[1]["channel_number"] == 2
     assert data[1]["template_name"] is None
+    assert data[1]["document_source"] == "S3_REMITOS_FRIC_ROT"

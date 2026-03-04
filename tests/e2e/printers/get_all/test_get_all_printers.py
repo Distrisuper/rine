@@ -14,7 +14,7 @@ def test_get_all_printers_with_data(client):
     printer_repo = PrinterRepository(engine)
     channel_repo = ChannelRepository(engine)
     
-    c1 = channel_repo.create(channel_number=10, description="Canal 10")
+    c1 = channel_repo.create(channel_number=10, description="Canal 10", document_source="INTERNAL")
     printer_repo.create_printer(name="Printer List Test", channel_ids=[c1.id])
     
     response = client.get("/printers")

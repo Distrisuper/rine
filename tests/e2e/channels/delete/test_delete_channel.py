@@ -6,7 +6,7 @@ from infrastructure.db.database import engine
 def test_delete_channel_success(client):
     # Setup: Crear un canal
     channel_repo = ChannelRepository(engine)
-    channel = channel_repo.create(channel_number=1, description="A eliminar")
+    channel = channel_repo.create(channel_number=1, description="A eliminar", document_source="INTERNAL")
     
     response = client.delete(f"/channels/{channel.id}")
     

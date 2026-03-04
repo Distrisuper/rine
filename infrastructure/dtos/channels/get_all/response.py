@@ -8,6 +8,7 @@ class ListChannelResponseDTO(BaseModel):
     description: Optional[str] = None
     template_id: Optional[int] = None
     template_name: Optional[str] = None
+    document_source: str
     is_active: bool
     created_at: Optional[datetime] = None
 

@@ -12,7 +12,7 @@ def test_preview_remito_success(client):
     
     # Usamos el path real que existe en el proyecto
     template = template_repo.create(name="Base Remito", file_path="remitos/base_remito.html")
-    channel_repo.create(channel_number=4, description="Channel for Remitos", template_id=template.id)
+    channel_repo.create(channel_number=4, description="Channel for Remitos", template_id=template.id, document_source="INTERNAL")
     
     # Datos del remito para Query String
     items = [
@@ -46,7 +46,7 @@ def test_preview_remito_wrong_template_type(client):
     
     template = template_repo.create(name="Zebra ZPL", file_path="labels/zebra_label.zpl")
     # Asociamos un ZPL a un canal de remito
-    channel_repo.create(channel_number=4, description="Channel for ZPL", template_id=template.id)
+    channel_repo.create(channel_number=4, description="Channel for ZPL", template_id=template.id, document_source="INTERNAL")
     
     response = client.get("/templates/preview/remito/4")
     

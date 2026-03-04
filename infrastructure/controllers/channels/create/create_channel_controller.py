@@ -7,9 +7,10 @@ class CreateChannelController:
     def __init__(self, use_case: CreateChannelUseCaseInterface):
         self._use_case = use_case
 
-    def __call__(self, channel_number: int, description: str | None, template_id: int) -> dict:
+    def __call__(self, channel_number: int, document_source: str, description: str | None = None, template_id: int | None = None) -> dict:
         return self._use_case(
             channel_number=channel_number,
             description=description,
             template_id=template_id,
+            document_source=document_source,
         )

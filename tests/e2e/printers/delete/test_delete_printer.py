@@ -10,7 +10,7 @@ def test_delete_printer_success(client):
     # Setup: Crear una impresora con canales
     printer_repo = PrinterRepository(engine)
     channel_repo = ChannelRepository(engine)
-    c1 = channel_repo.create(channel_number=5, description="Canal 5")
+    c1 = channel_repo.create(channel_number=5, description="Canal 5", document_source="INTERNAL")
     printer_data = printer_repo.create_printer(name="To be deleted", channel_ids=[c1.id])
     printer_id = printer_data["id"]
     
