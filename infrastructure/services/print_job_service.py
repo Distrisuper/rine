@@ -16,10 +16,16 @@ except ImportError:
     cups = None
 
 
-def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "Remito") -> int:
+def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "Remito", number_of_copies: int = 1) -> int:
     """
     Envía un PDF a una cola CUPS por nombre.
     Requiere Linux con CUPS y la impresora ya configurada en CUPS.
+
+    Args:
+        printer_name: Nombre de la impresora en CUPS.
+        pdf_bytes: Contenido del PDF a imprimir.
+        job_title: Título del trabajo de impresión.
+        number_of_copies: Número de copias a imprimir.
 
     Returns:
         job_id del trabajo enviado a CUPS.
@@ -43,8 +49,9 @@ def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "
         path = Path(f.name)
 
     try:
-        job_id = conn.printFile(printer_name, str(path), job_title, {})
-        logger.info("Trabajo enviado a %s: job_id=%s", printer_name, job_id)
+        options = {"copies": str(number_of_copies)}
+        job_id = conn.printFile(printer_name, str(path), job_title, options)
+        logger.info("Trabajo enviado a %s: job_id=%s, copies=%s", printer_name, job_id, number_of_copies)
         return job_id
     finally:
         path.unlink(missing_ok=True)
@@ -54,11 +61,19 @@ def print_raw_to_printer(
     printer_name: str,
     raw_bytes: bytes,
     job_title: str = "Etiqueta",
+    number_of_copies: int = 1,
     suffix: str = ".zpl",
 ) -> int:
     """
     Envía datos en bruto (ej. ZPL) a una cola CUPS por nombre.
     Pensado para impresoras de etiquetas (Zebra) configuradas con cola raw (-m raw).
+
+    Args:
+        printer_name: Nombre de la impresora en CUPS.
+        raw_bytes: Contenido en bruto a imprimir.
+        job_title: Título del trabajo de impresión.
+        number_of_copies: Número de copias a imprimir.
+        suffix: Extensión del archivo temporal.
 
     Returns:
         job_id del trabajo enviado a CUPS.
@@ -80,8 +95,9 @@ def print_raw_to_printer(
         path = Path(f.name)
 
     try:
-        job_id = conn.printFile(printer_name, str(path), job_title, {})
-        logger.info("Trabajo ZPL/raw enviado a %s: job_id=%s", printer_name, job_id)
+        options = {"copies": str(number_of_copies)}
+        job_id = conn.printFile(printer_name, str(path), job_title, options)
+        logger.info("Trabajo ZPL/raw enviado a %s: job_id=%s, copies=%s", printer_name, job_id, number_of_copies)
         return job_id
     finally:
         path.unlink(missing_ok=True)

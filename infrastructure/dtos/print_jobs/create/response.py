@@ -10,7 +10,8 @@ class CreatePrintJobResponseDTO(BaseModel):
     channel: int
     status: str
     print_count: int
-    print_type: Optional[str] = None
+    number_of_copies: int
+    attempt_count: int = 0
     date_created: Union[datetime, str]
     date_started: Optional[Union[datetime, str]] = None
     date_processed: Optional[Union[datetime, str]] = None

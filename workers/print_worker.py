@@ -61,11 +61,11 @@ class PrintWorker:
                     content_type = "zpl"
                     job_title = "Etiqueta"
 
-                job_id = self._send_to_printer(printer.name, content, content_type, job_title)
+                job_id = self._send_to_printer(printer.name, content, content_type, job_title, job.number_of_copies)
 
                 job.cups_job_id = job_id
                 job.status = "sent"
-                job.print_count += 1
+                job.attempt_count += 1
                 job.printer_name = printer.name
                 job.processing_since = None
 
@@ -99,22 +99,22 @@ class PrintWorker:
 
         return job
 
-    def _send_to_printer(self, printer_name: str, content: bytes, content_type: str, job_title: str) -> int:
+    def _send_to_printer(self, printer_name: str, content: bytes, content_type: str, job_title: str, number_of_copies: int = 1) -> int:
         logger.info(f"Enviando a {printer_name} (type={content_type})")
-        job_id = self.print_use_case(printer_name, content, content_type, job_title)
+        job_id = self.print_use_case(printer_name, content, content_type, job_title, number_of_copies)
         logger.info(f"Trabajo enviado a CUPS: job_id={job_id}")
         return job_id
 
     def _handle_failure(self, job: PrintJob, error: str):
-        job.print_count += 1
+        job.attempt_count += 1
         job.error_message = error
 
-        if job.print_count >= self.MAX_RETRIES:
+        if job.attempt_count >= self.MAX_RETRIES:
             job.status = "failed"
             logger.error(f"Job {job.id} falló definitivamente")
         else:
             job.status = "pending"
-            logger.warning(f"Job {job.id} reintentará ({job.print_count}/{self.MAX_RETRIES})")
+            logger.warning(f"Job {job.id} reintentará ({job.attempt_count}/{self.MAX_RETRIES})")
 
         job.processing_since = None
 

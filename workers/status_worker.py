@@ -128,23 +128,23 @@ class StatusWorker:
             return None
 
     def _handle_job_not_found(self, job: PrintJob):
-        if job.print_count >= self.MAX_RETRIES:
+        if job.attempt_count >= self.MAX_RETRIES:
             job.status = "failed"
-            job.error_message = f"Job {job.cups_job_id} no encontrado en CUPS después de {job.print_count} intentos"
+            job.error_message = f"Job {job.cups_job_id} no encontrado en CUPS después de {job.attempt_count} intentos"
             logger.error(f"Job {job.id} falló: no encontrado en CUPS")
         else:
-            job.print_count += 1
-            logger.warning(f"Job {job.id} no encontrado en CUPS, incrementando retry ({job.print_count})")
+            job.attempt_count += 1
+            logger.warning(f"Job {job.id} no encontrado en CUPS, incrementando retry ({job.attempt_count})")
         
         self.print_job_repo.update(job)
 
     def _handle_check_error(self, job: PrintJob, error: str):
-        job.print_count += 1
+        job.attempt_count += 1
         job.error_message = f"Error verificando: {error}"
 
-        if job.print_count >= self.MAX_RETRIES:
+        if job.attempt_count >= self.MAX_RETRIES:
             job.status = "failed"
-            logger.error(f"Job {job.id} falló definitivamente tras {job.print_count} errores")
+            logger.error(f"Job {job.id} falló definitivamente tras {job.attempt_count} errores")
         
         self.print_job_repo.update(job)
 

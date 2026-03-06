@@ -11,8 +11,9 @@ class PrintJobUseCase(PrintJobUseCaseInterface):
         content: bytes,
         content_type: str,
         job_title: str,
+        number_of_copies: int = 1,
     ) -> int:
         if content_type == "pdf":
-            return print_pdf_to_printer(printer_name, content, job_title)
+            return print_pdf_to_printer(printer_name, content, job_title, number_of_copies)
         else:
-            return print_raw_to_printer(printer_name, content, job_title)
+            return print_raw_to_printer(printer_name, content, job_title, number_of_copies)
