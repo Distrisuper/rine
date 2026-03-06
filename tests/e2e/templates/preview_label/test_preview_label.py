@@ -11,7 +11,7 @@ def test_preview_label_success(client):
     
     # Usamos el path real que existe en el proyecto
     template = template_repo.create(name="Zebra Label", file_path="labels/zebra_label.zpl")
-    channel_repo.create(channel_number=3, description="Channel for Labels", template_id=template.id)
+    channel_repo.create(channel_number=3, description="Channel for Labels", template_id=template.id, document_source="INTERNAL")
     
     # Parámetros por Query String
     params = {
@@ -35,7 +35,7 @@ def test_preview_label_wrong_template_type(client):
     channel_repo = ChannelRepository(engine)
     
     template = template_repo.create(name="Remito HTML", file_path="remitos/base_remito.html")
-    channel_repo.create(channel_number=3, description="Channel for Label", template_id=template.id)
+    channel_repo.create(channel_number=3, description="Channel for Label", template_id=template.id, document_source="INTERNAL")
     
     response = client.get("/templates/preview/label/3")
     

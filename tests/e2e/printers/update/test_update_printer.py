@@ -27,8 +27,8 @@ def test_update_printer_channels(client):
     printer_repo = PrinterRepository(engine)
     channel_repo = ChannelRepository(engine)
     
-    c1 = channel_repo.create(channel_number=1, description="Canal 1")
-    c2 = channel_repo.create(channel_number=2, description="Canal 2")
+    c1 = channel_repo.create(channel_number=1, description="Canal 1", document_source="INTERNAL")
+    c2 = channel_repo.create(channel_number=2, description="Canal 2", document_source="INTERNAL")
     
     printer_data = printer_repo.create_printer(name="Printer Channels Test", channel_ids=[c1.id])
     printer_id = printer_data["id"]

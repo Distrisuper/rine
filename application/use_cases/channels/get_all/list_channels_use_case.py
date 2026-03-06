@@ -19,6 +19,7 @@ class ListChannelsUseCase(ListChannelsUseCaseInterface):
                 "description": c.description,
                 "template_id": c.template_id,
                 "template_name": templates.get(c.template_id),
+                "document_source": c.document_source,
                 "is_active": c.is_active,
                 "created_at": c.created_at,
             }

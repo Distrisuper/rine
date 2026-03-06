@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Optional, List
 from domain.entities.channel import Channel
 
 class ChannelRepositoryInterface(ABC):
@@ -16,13 +16,14 @@ class ChannelRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def create(self, channel_number: int, description: str = None, template_id: int = None) -> Channel:
+    def create(self, channel_number: int, document_source: str, description: str = None, template_id: int = None) -> Channel:
         pass
 
     @abstractmethod
-    def update(self, channel_id: int, description: str = None, is_active: bool = None, template_id: int = None) -> Optional[Channel]:
+    def update(self, channel_id: int, description: str = None, is_active: bool = None, template_id: int = None, document_source: str = None) -> Optional[Channel]:
         pass
 
     @abstractmethod
     def delete(self, channel_id: int) -> bool:
         pass
+

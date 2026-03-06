@@ -20,8 +20,8 @@ def test_create_printer_simple_success(client):
 def test_create_printer_with_channels_success(client):
     # Setup: Crear canales previos
     channel_repo = ChannelRepository(engine)
-    c1 = channel_repo.create(channel_number=1, description="Canal 1")
-    c2 = channel_repo.create(channel_number=2, description="Canal 2")
+    c1 = channel_repo.create(channel_number=1, description="Canal 1", document_source="INTERNAL")
+    c2 = channel_repo.create(channel_number=2, description="Canal 2", document_source="INTERNAL")
     
     payload = {
         "name": "Zebra ZT230",

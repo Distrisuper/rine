@@ -16,8 +16,8 @@ def test_printer_test_endpoint_creates_jobs(client):
     t1 = template_repo.create(name="Label", file_path="label.zpl")
     t2 = template_repo.create(name="Remito", file_path="remito.html")
     
-    c1 = channel_repo.create(channel_number=1, description="C1", template_id=t1.id)
-    c2 = channel_repo.create(channel_number=2, description="C2", template_id=t2.id)
+    c1 = channel_repo.create(channel_number=1, description="C1", template_id=t1.id, document_source="INTERNAL")
+    c2 = channel_repo.create(channel_number=2, description="C2", template_id=t2.id, document_source="INTERNAL")
     
     p1 = printer_repo.create_printer(name="Test Printer", channel_ids=[c1.id, c2.id])
     printer_id = p1["id"]

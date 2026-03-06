@@ -187,7 +187,7 @@ def create_channel(
     request: CreateChannelRequest,
     controller: CreateChannelController = Depends(container.create_channel_controller)
 ):
-    return controller(request.channel_number, request.description, request.template_id)
+    return controller(request.channel_number, request.document_source, request.description, request.template_id)
 
 @router.put(
     "/channels/{channel_id}",
@@ -201,7 +201,7 @@ def update_channel(
     request: UpdateChannelRequest,
     controller: UpdateChannelController = Depends(container.update_channel_controller)
 ):
-    return controller(channel_id, request.description, request.is_active, request.template_id)
+    return controller(channel_id, request.description, request.is_active, request.template_id, request.document_source)
 
 @router.delete(
     "/channels/{channel_id}",

@@ -37,7 +37,7 @@ def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render)
     template = template_repo.create(name="Test Template", file_path="test.html")
 
     # Create Channel linked to Template
-    channel = channel_repo.create(channel_number=10, description="Test Channel", template_id=template.id)
+    channel = channel_repo.create(channel_number=10, description="Test Channel", template_id=template.id, document_source="INTERNAL")
     
     # Link Printer to Channel via repository (create_printer also links channels)
     printer_repo.create_printer(name="TestPrinter", channel_ids=[channel.id])
