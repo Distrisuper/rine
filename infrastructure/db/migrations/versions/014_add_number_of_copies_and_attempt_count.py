@@ -1,7 +1,7 @@
 """Add number_of_copies and attempt_count to print_jobs
 
-Revision ID: 012
-Revises: 011
+Revision ID: 014
+Revises: 013
 Create Date: 2026-03-04
 
 """
@@ -11,8 +11,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '012'
-down_revision: Union[str, None] = '011'
+revision: str = '014'
+down_revision: Union[str, None] = '013'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
