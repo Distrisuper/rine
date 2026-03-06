@@ -36,12 +36,13 @@
                         <th>Channel</th>
                         <th>Descripción</th>
                         <th>Template</th>
+                        <th>Document Source</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="channels-body">
-                    <tr><td colspan="5" class="loading">Cargando...</td></tr>
+                    <tr><td colspan="6" class="loading">Cargando...</td></tr>
                 </tbody>
             </table>
         </section>
@@ -144,6 +145,13 @@
                     <label>Template</label>
                     <select id="channel-template" required>
                         <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Document Source</label>
+                    <select id="channel-document-source" required>
+                        <option value="INTERNAL">INTERNAL</option>
+                        <option value="S3_REMITOS_FRIC_ROT">S3_REMITOS_FRIC_ROT</option>
                     </select>
                 </div>
                 <div class="form-group">

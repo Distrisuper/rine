@@ -4,12 +4,16 @@ from typing import Any
 from sqlmodel import Session, select
 
 from domain.services.document_builder.document_builder_interface import DocumentBuilder
+from domain.services.barcode_service_interface import BarcodeServiceInterface
 from domain.value_objects import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
 
 
 class TemplateDocumentBuilder(DocumentBuilder):
     """Builds document from Jinja template (ZPL or HTML)."""
+
+    def __init__(self, barcode_service: "BarcodeServiceInterface | None" = None):
+        self._barcode_service = barcode_service
 
     def build(self, job: Any, session: Session) -> bytes:
         template = self._get_template(job, session)
@@ -58,9 +62,12 @@ class TemplateDocumentBuilder(DocumentBuilder):
     def _render_remito(self, data: RemitoRenderData, file_path: str) -> bytes:
         from jinja2 import Template
         from weasyprint import HTML
-        from domain.services.barcode_service import BarcodeService
 
-        barcode_service = BarcodeService()
+        if self._barcode_service is None:
+            from infrastructure.services.barcode_service import BarcodeService
+            self._barcode_service = BarcodeService()
+
+        barcode_service = self._barcode_service
 
         template_path = Path(f"/app/infrastructure/templates/{file_path}")
         if not template_path.exists():
