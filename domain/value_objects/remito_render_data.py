@@ -24,15 +24,30 @@ class RemitoRenderData(BaseModel):
 
     @classmethod
     def from_queue_item(cls, item: Any, extra: Optional[Any] = None) -> "RemitoRenderData":
-        """Factory method para construir los datos de renderizado desde un QueueItem."""
+        """
+        Construye RemitoRenderData desde un QueueItem.
+        Los campos del remito (items, fecha, reparto, etc.) se leen de `extra`
+        (ExtraDataRemito), con fallback a los atributos del item.
+        """
+        e = extra  # alias corto
+
         return cls(
             client_code=item.client_code or "",
             client_name=item.client_name or "",
-            order_number=str(getattr(item, "order_number", 0)),
-            address=getattr(item, "address", "") or "",
-            city=getattr(item, "city", "") or "",
-            items=[],
-            total=getattr(item, "invoice_total", 0.0) or 0.0,
-            remito_id=getattr(item, "remito_id", "") or "",
-            fecha="",
+            order_number=getattr(item, "order_number", 0) or 0,
+            address=(e and e.address) or getattr(item, "address", "") or "",
+            city=(e and e.city) or getattr(item, "city", "") or "",
+            items=(e.items if e and e.items is not None else []),
+            total=(e.total if e and e.total is not None else None) or getattr(item, "invoice_total", 0.0) or 0.0,
+            remito_id=(e and e.remito_id) or getattr(item, "remito_id", "") or "",
+            fecha=(e and e.fecha) or "",
+            reparto=(e and e.reparto) or "",
+            sucursal=(e and e.sucursal) or "",
+            obs=(e and e.obs) or "",
+            cant_unidades=(e and e.cant_unidades) or "",
+            valor_declarado=(e and e.valor_declarado) or "",
+            numero_cot=(e and e.numero_cot) or "",
+            numero_cai=(e and e.numero_cai) or "",
+            vencimiento=(e and e.vencimiento) or "",
+            disclaimer=(e and e.disclaimer) or "",
         )
