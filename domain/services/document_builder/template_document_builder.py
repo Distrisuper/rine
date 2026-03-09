@@ -57,7 +57,7 @@ class TemplateDocumentBuilder(DocumentBuilder):
             city=data.city,
             packages=data.packages,
         )
-        return zpl.encode("utf-8")
+        return zpl.encode("latin-1", errors="replace")
 
     def _render_remito(self, data: RemitoRenderData, file_path: str) -> bytes:
         from jinja2 import Template

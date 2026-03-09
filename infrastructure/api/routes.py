@@ -54,7 +54,7 @@ from infrastructure.dtos.print_jobs.print.request import PrintJobRequestDTO
 from infrastructure.dtos.template.list.response import TemplateResponseDTO as TemplateResponse
 from infrastructure.dtos.template.label_preview.request import LabelPreviewRequestDTO
 from infrastructure.dtos.template.label_preview.response import LabelPreviewResponseDTO as LabelPreviewResponse
-from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO
+from infrastructure.dtos.template.remito_preview.request import RemitoPreviewRequestDTO, RemitoPreviewPostRequestDTO
 from infrastructure.dtos.template.remito_preview.response import RemitoPreviewResponseDTO as RemitoPreviewResponse
 
 # DTOs - Health
@@ -283,6 +283,33 @@ def preview_remito_json(
 ):
     params.channel = channel_number
     return controller(params, format="json")
+
+@router.post(
+    "/templates/preview/remito/{channel_number}",
+    tags=["Templates"],
+    summary="Preview de remito (PDF) — body JSON"
+)
+def preview_remito_post(
+    channel_number: int,
+    body: RemitoPreviewPostRequestDTO,
+    controller: PreviewRemitoController = Depends(container.remito_preview_controller)
+):
+    body.channel = channel_number
+    return controller(body.to_get_dto())
+
+@router.post(
+    "/templates/preview/remito/{channel_number}/json",
+    tags=["Templates"],
+    summary="Preview de remito (JSON) — body JSON",
+    response_model=RemitoPreviewResponse
+)
+def preview_remito_post_json(
+    channel_number: int,
+    body: RemitoPreviewPostRequestDTO,
+    controller: PreviewRemitoController = Depends(container.remito_preview_controller)
+):
+    body.channel = channel_number
+    return controller(body.to_get_dto(), format="json")
 
 # --- Print Jobs ---
 @router.get(

@@ -116,6 +116,10 @@ Estado de la flota vía CUPS (ready/not_ready por impresora). Para probar por in
 
 En Windows CUPS no existe y `pycups` (en `requirements.txt`) solo se instala en Linux (Raspberry Pi, WSL2 o Docker). La forma recomendada de correr la API desde Windows es usar Docker Compose o WSL2 y acceder a `http://127.0.0.1:8000`. Sin `RINE_MOCK_PRINTERS=1` verás `_cups_unavailable: true` y `printers: {}`. En Linux/Raspberry con CUPS se listan las impresoras reales.
 
+**CUPS en Docker (Windows):** Podés levantar CUPS dentro de Docker y que la API y los workers se conecten por red. En `.env` definí `CUPS_SERVER=cups:631` y levantá el servicio `cups` junto con la app: `docker compose up -d cups app`. La interfaz web de CUPS queda en `http://127.0.0.1:631`. En Raspberry con CUPS en el host no definas `CUPS_SERVER` y no levantes el servicio `cups`.
+
+**Impresora PDF en CUPS (Docker):** La imagen del servicio `cups` incluye una impresora virtual llamada **PDF**. Lo que “imprimís” en esa cola se convierte en PDF y se guarda en `.data/cups-pdf/` en tu PC. Para usarla: 1) Levantá CUPS con `docker compose up -d cups` (y construí la imagen la primera vez: `docker compose build cups`). 2) En la API, creá una impresora con nombre `PDF` (o el que use vuestra config) apuntando a esa cola. 3) Los PDFs aparecerán en la carpeta `.data/cups-pdf`.
+
 **Testing:** Levantar la API (`python -m uvicorn app.main:app --reload`) y abrir `http://127.0.0.1:8000/docs` → probar `GET /printers/status`. O con curl: `curl http://127.0.0.1:8000/printers/status`.
 
 #### Probar en Windows (sin CUPS)
