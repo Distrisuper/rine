@@ -25,6 +25,7 @@ class RemitoPreviewRequestDTO(BaseModel):
     reparto: Optional[str] = None
     sucursal: Optional[str] = None
     obs: Optional[str] = None
+    comentarios: Optional[str] = None
     cant_unidades: Optional[str] = None
     valor_declarado: Optional[str] = None
     numero_cot: Optional[str] = None
@@ -51,6 +52,7 @@ class RemitoPreviewRequestDTO(BaseModel):
                 "items": items_list,
                 "total": self.total or 0.0,
                 "obs": self.obs or "",
+                "comentarios": self.comentarios or "",
                 "cant_unidades": self.cant_unidades or "",
                 "valor_declarado": self.valor_declarado or "",
                 "numero_cot": self.numero_cot or "",
@@ -120,6 +122,7 @@ class RemitoPreviewPostRequestDTO(BaseModel):
     reparto: Optional[str] = None
     sucursal: Optional[str] = None
     obs: Optional[str] = None
+    comentarios: Optional[str] = None
     cant_unidades: Optional[str] = None
     valor_declarado: Optional[str] = None
     numero_cot: Optional[str] = None
@@ -139,13 +142,14 @@ class RemitoPreviewPostRequestDTO(BaseModel):
             "city": self.city or "",
             "items": items_dicts,
             "total": self.total or 0.0,
-            "obs": self.obs or "",
-            "cant_unidades": self.cant_unidades or "",
-            "valor_declarado": self.valor_declarado or "",
-            "numero_cot": self.numero_cot or "",
-            "numero_cai": self.numero_cai or "",
-            "vencimiento": self.vencimiento or "",
-            "disclaimer": self.disclaimer or "",
+                "obs": self.obs or "",
+                "comentarios": self.comentarios or "",
+                "cant_unidades": self.cant_unidades or "",
+                "valor_declarado": self.valor_declarado or "",
+                "numero_cot": self.numero_cot or "",
+                "numero_cai": self.numero_cai or "",
+                "vencimiento": self.vencimiento or "",
+                "disclaimer": self.disclaimer or "",
         }
         return RemitoPreviewRequestDTO(
             channel=self.channel,

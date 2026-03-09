@@ -30,6 +30,7 @@ class ExtraDataRemito(BaseModel):
     items: Optional[List[Dict[str, Any]]] = None
     total: Optional[float] = None
     obs: Optional[str] = None
+    comentarios: Optional[str] = None
     cant_unidades: Optional[str] = None
     valor_declarado: Optional[str] = None
     numero_cot: Optional[str] = None

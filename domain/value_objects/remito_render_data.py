@@ -15,6 +15,7 @@ class RemitoRenderData(BaseModel):
     reparto: str = ""
     sucursal: str = ""
     obs: str = ""
+    comentarios: str = ""
     cant_unidades: str = ""
     valor_declarado: str = ""
     numero_cot: str = ""
@@ -44,6 +45,7 @@ class RemitoRenderData(BaseModel):
             reparto=(e and e.reparto) or "",
             sucursal=(e and e.sucursal) or "",
             obs=(e and e.obs) or "",
+            comentarios=(e and e.comentarios) or "",
             cant_unidades=(e and e.cant_unidades) or "",
             valor_declarado=(e and e.valor_declarado) or "",
             numero_cot=(e and e.numero_cot) or "",

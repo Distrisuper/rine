@@ -30,6 +30,8 @@
     .items .col-codigo { width: 12%; }
     .items .col-cant { width: 8%; }
     .items .col-desc { width: 80%; }
+    .comentarios-block { margin: 12px 0 4px 0; font-size: 11px; border-top: 1px solid #ccc; padding-top: 8px; }
+    .comentarios-block strong { display: inline-block; min-width: 110px; }
     .disclaimer { text-align: center; margin: 16px 0; font-size: 11px; }
     .footer-wrap { display: table; width: 100%; margin-top: 20px; font-size: 10px; }
     .footer-left { display: table-cell; width: 50%; vertical-align: top; }
@@ -121,6 +123,12 @@
       <tr><td>—</td><td>—</td><td>—</td></tr>
     </tbody>
   </table>
+  {% endif %}
+
+  {% if comentarios %}
+  <div class="comentarios-block">
+    <strong>Comentarios:</strong> {{ comentarios }}
+  </div>
   {% endif %}
 
 </div><!-- /.content-wrap -->

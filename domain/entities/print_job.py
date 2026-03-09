@@ -75,6 +75,7 @@ class PrintJob(SQLModel, table=True):
             reparto=data.get("reparto"),
             sucursal=data.get("sucursal"),
             obs=data.get("obs"),
+            comentarios=data.get("comentarios"),
             cant_unidades=data.get("cant_unidades"),
             valor_declarado=data.get("valor_declarado"),
             numero_cot=data.get("numero_cot"),

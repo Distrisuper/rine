@@ -52,6 +52,7 @@ def _data_to_context(data: RemitoRenderData, barcode_service: BarcodeServiceInte
         "reparto": data.reparto,
         "sucursal": data.sucursal,
         "obs": data.obs,
+        "comentarios": data.comentarios,
         "cant_unidades": data.cant_unidades,
         "valor_declarado": data.valor_declarado,
         "numero_cot": data.numero_cot,
