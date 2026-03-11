@@ -37,5 +37,4 @@ class ZplLabelRenderer(LabelRenderer):
         }
         
         rendered_zpl = template.render(**context)
-        return rendered_zpl
-        # return rendered_zpl.encode("latin-1", errors="replace")
+        return rendered_zpl.encode("latin-1", errors="replace")

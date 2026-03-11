@@ -9,7 +9,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
-      - CUPS_SERVER=${CUPS_SERVER}
+      # - CUPS_SERVER=${CUPS_SERVER}
       - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     ports:
       - "8000:8000"
@@ -34,7 +34,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
-      - CUPS_SERVER=${CUPS_SERVER}
+      # - CUPS_SERVER=${CUPS_SERVER}
       - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     volumes:
       - ./domain:/app/domain
@@ -57,7 +57,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
-      - CUPS_SERVER=${CUPS_SERVER}
+      # - CUPS_SERVER=${CUPS_SERVER}
       - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     volumes:
       - ./domain:/app/domain
