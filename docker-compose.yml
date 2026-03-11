@@ -10,6 +10,7 @@ services:
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
       - CUPS_SERVER=${CUPS_SERVER}
+      - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     ports:
       - "8000:8000"
     volumes:
@@ -34,6 +35,7 @@ services:
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
       - CUPS_SERVER=${CUPS_SERVER}
+      - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     volumes:
       - ./domain:/app/domain
       - ./application:/app/application
@@ -56,6 +58,7 @@ services:
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
       - CUPS_SERVER=${CUPS_SERVER}
+      - S3_REMITOS_FRIC_ROT_BASE_URL=${S3_REMITOS_FRIC_ROT_BASE_URL}
     volumes:
       - ./domain:/app/domain
       - ./application:/app/application

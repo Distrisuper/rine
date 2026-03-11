@@ -7,7 +7,7 @@ build-local:
 	docker compose --profile local build
 
 up:
-	docker compose up -d
+	docker compose up
 
 up-local:
 	docker compose --profile local up

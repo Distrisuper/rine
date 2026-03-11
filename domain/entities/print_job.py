@@ -52,8 +52,20 @@ class PrintJob(SQLModel, table=True):
         builder = DocumentBuilderFactory.get_for(channel, session)
         return builder.build(self, session)
 
+    def _get_payload_dict(self) -> dict:
+        """Helper para obtener el payload como diccionario, manejando string o dict."""
+        if not self.payload:
+            return {}
+        if isinstance(self.payload, dict):
+            return self.payload
+        try:
+            return json.loads(self.payload)
+        except Exception as e:
+            # Si falla el parseo, devolvemos el objeto tal cual o logueamos el error
+            return {}
+
     def get_render_data_label(self) -> LabelRenderData:
-        data = json.loads(self.payload) if isinstance(self.payload, str) else (self.payload or {})
+        data = self._get_payload_dict()
         return LabelRenderData(
             to=data.get("to", ""),
             address=data.get("address", ""),
@@ -64,7 +76,7 @@ class PrintJob(SQLModel, table=True):
         )
 
     def get_render_data_remito(self) -> RemitoRenderData:
-        data = json.loads(self.payload) if isinstance(self.payload, str) else (self.payload or {})
+        data = self._get_payload_dict()
         return RemitoRenderData(
             client_code=self.client_code or data.get("client_code", ""),
             client_name=self.client_name or data.get("client_name", ""),
@@ -77,7 +89,7 @@ class PrintJob(SQLModel, table=True):
             fecha=data.get("fecha", ""),
             reparto=data.get("reparto"),
             sucursal=data.get("sucursal"),
-            obs=data.get("comentarios") or data.get("obs"), # PR #35
+            obs=data.get("comentarios") or data.get("obs"),
             cant_unidades=data.get("cant_unidades"),
             valor_declarado=data.get("valor_declarado"),
             numero_cot=data.get("numero_cot"),

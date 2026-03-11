@@ -6,12 +6,19 @@ RUN apt-get update \
         cups \
         printer-driver-cups-pdf \
         procps \
+        ghostscript \
     && rm -rf /var/lib/apt/lists/*
 
-# Escuchar en todas las interfaces para que app/workers en Docker se conecten
-RUN sed -i 's/Listen localhost:631/Listen 0.0.0.0:631/' /etc/cups/cupsd.conf || true
+# Crear usuario administrador para la UI de CUPS (User: admin / Pass: admin)
+# Esto es vital para que te deje entrar a la administración web
+RUN useradd -m -G lpadmin admin && echo "admin:admin" | chpasswd
 
-# Salida de cups-pdf a /output (montar volumen ahí)
+# Configuración básica para permitir acceso remoto a la UI y red de Docker
+RUN sed -i 's/Listen localhost:631/Listen 0.0.0.0:631/' /etc/cups/cupsd.conf && \
+    sed -i 's/Browsing Off/Browsing On/' /etc/cups/cupsd.conf && \
+    echo "DefaultEncryption Never" >> /etc/cups/cupsd.conf
+
+# Salida de cups-pdf a /output
 RUN mkdir -p /output && chmod 1777 /output
 RUN sed -i 's|^#*Out .*|Out /output|' /etc/cups/cups-pdf.conf || echo 'Out /output' >> /etc/cups/cups-pdf.conf
 

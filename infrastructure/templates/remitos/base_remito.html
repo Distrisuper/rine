@@ -1,134 +1,152 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <title>Remito {{ remito_id or 'N/A' }}</title>
+  <!-- <link rel="stylesheet" href="remito.css" /> -->
   <style>
-    /* PR #35: Flexbox para empujar el footer al final de la página A4 */
-    html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-    .content-wrap { display: flex; flex-direction: column; min-height: 100%; padding: 20px; box-sizing: border-box; }
-    .main-body { flex: 1; }
-
-    /* PR #35: Header en 3 columnas */
-    .header-table { display: table; width: 100%; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 14px; }
-    .header-col { display: table-cell; vertical-align: top; }
-    .col-left { width: 35%; }
-    .col-center { width: 30%; text-align: center; }
-    .col-right { width: 35%; text-align: right; }
-
-    .logo-img { max-height: 55px; width: auto; }
-    .company-contact { font-size: 9px; margin-top: 4px; line-height: 1.3; }
-    
-    .remito-r-box { display: inline-block; width: 38px; height: 38px; line-height: 38px; text-align: center; font-size: 28px; font-weight: bold; border: 2px solid #000; margin-bottom: 5px; }
-    .remito-num { font-size: 14px; font-weight: bold; }
-    
-    .company-fiscal { font-size: 10px; line-height: 1.4; }
-    .fecha-line { font-weight: bold; margin-top: 5px; font-size: 11px; }
-
-    .client-block { margin-bottom: 15px; line-height: 1.5; }
+    body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; color: #000; }
+    .header-wrap   { display: table; width: 100%; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 14px; }
+    .header-left   { display: table-cell; width: 33%; vertical-align: top; }
+    .header-center { display: table-cell; width: 34%; vertical-align: top; text-align: center; }
+    .header-right  { display: table-cell; width: 33%; vertical-align: top; text-align: right; }
+    .logo-d { display: inline-block; width: 42px; height: 52px; line-height: 52px; text-align: center; font-size: 36px; font-weight: bold; border: 2px solid #000; margin-right: 8px; vertical-align: middle; }
+    .logo-img { max-height: 52px; width: auto; vertical-align: middle; display: inline-block; }
+    .company-name { font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
+    .company-tagline { font-size: 12px; font-weight: bold; margin-top: 2px; }
+    .company-line2 { font-size: 10px; margin-top: 1px; }
+    .company-contact { font-size: 10px; margin-top: 6px; line-height: 1.4; }
+    .remito-r-box { display: inline-block; width: 38px; height: 46px; line-height: 46px; text-align: center; font-size: 28px; font-weight: bold; border: 2px solid #000; margin-right: 8px; vertical-align: middle; }
+    .remito-num { font-size: 14px; font-weight: bold; display: inline-block; vertical-align: middle; }
+    .remito-num .num { font-weight: bold; }
+    .company-fiscal { font-size: 10px; text-align: right; line-height: 1.5; }
+    .fecha-line { margin-top: 4px; font-weight: bold; }
+    .client-block { margin-bottom: 14px; line-height: 1.5; }
+    .client-block .line { margin-bottom: 2px; }
     .client-block strong { display: inline-block; min-width: 75px; }
-
-    .items { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .items th { text-align: left; border-bottom: 1px solid #000; padding: 6px; background: #f0f0f0; }
-    .items td { border-bottom: 1px solid #ccc; padding: 6px; vertical-align: top; }
+    .items { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+    .items th { text-align: left; border-bottom: 1px solid #000; padding: 6px 8px; background: #f0f0f0; }
+    .items td { border-bottom: 1px solid #ccc; padding: 6px 8px; }
     .items .col-codigo { width: 12%; }
-    .items .col-cant { width: 10%; }
-    .items .col-desc { width: 68%; }
-    .items .col-un { width: 10%; }
-
-    .footer-wrap { border-top: 2px solid #000; padding-top: 10px; margin-top: 20px; font-size: 10px; }
-    .footer-table { display: table; width: 100%; }
-    .footer-col { display: table-cell; width: 50%; vertical-align: top; }
-    
-    .barcode-wrap { margin-top: 10px; text-align: center; }
-    .barcode-img { max-width: 300px; height: auto; }
-    .disclaimer { text-align: center; margin-top: 15px; font-size: 10px; font-style: italic; }
+    .items .col-cant { width: 8%; }
+    .items .col-desc { width: 80%; }
+    .comentarios-block { margin: 12px 0 4px 0; font-size: 11px; border-top: 1px solid #ccc; padding-top: 8px; }
+    .comentarios-block strong { display: inline-block; min-width: 110px; }
+    .disclaimer { text-align: center; margin: 16px 0; font-size: 11px; }
+    .footer-wrap { display: table; width: 100%; margin-top: 20px; font-size: 10px; }
+    .footer-left { display: table-cell; width: 50%; vertical-align: top; }
+    .footer-right { display: table-cell; width: 50%; vertical-align: top; text-align: right; }
+    .footer-wrap .line { margin-bottom: 2px; }
+    .barcode-wrap { margin-top: 8px; }
+    .barcode-wrap img { max-width: 200px; max-height: 60px; display: block; margin: 0 auto; }
   </style>
 </head>
 <body>
-  <div class="content-wrap">
-    <div class="main-body">
-      <!-- PR #35: Header 3 Columnas -->
-      <div class="header-table">
-        <div class="header-col col-left">
-          {% if logo_data_url %}
-          <img src="{{ logo_data_url }}" alt="Logo" class="logo-img" />
-          {% else %}
-          <div style="font-size: 18px; font-weight: bold;">DISTRISUPER S.R.L.</div>
-          {% endif %}
-          <div class="company-contact">
-            11 de septiembre 5957 - TEL 0810-666-4500<br />
-            (CP7600) Mar del Plata - Buenos Aires<br />
-            pedidosmdp@distrisuper.com
-          </div>
-        </div>
-        <div class="header-col col-center">
-          <div class="remito-r-box">R</div>
-          <div class="remito-num">Nº {{ remito_id or '————' }}</div>
-          {% if barcode_data_url %}
-          <div class="barcode-wrap">
-            <img src="{{ barcode_data_url }}" class="barcode-img" />
-          </div>
-          {% endif %}
-        </div>
-        <div class="header-col col-right">
-          <div class="company-fiscal">
-            CUIT: 30-60924920-6<br />
-            Ing Brutos: 911-440096-1<br />
-            Ini Activ: 15/05/1995<br />
-            I.V.A RESPONSABLE INSCRIPTO
-          </div>
-          <div class="fecha-line">FECHA: {{ fecha or '—/—/—' }}</div>
-        </div>
+<div class="content-wrap">
+  <div class="header-wrap">
+    <div class="header-left">
+      <div>
+        {% if logo_data_url %}
+        <img src="{{ logo_data_url }}" alt="DISTRISUPER" class="logo-img" />
+        {% else %}
+        <span class="logo-d">D</span>
+        <span class="company-name">DISTRISUPER</span>
+        {% endif %}
       </div>
-
-      <div class="client-block">
-        <div><strong>Cliente:</strong> {{ client_code }} - {{ client_name }}</div>
-        <div><strong>Domicilio:</strong> {{ address or '—' }}</div>
-        <div><strong>Localidad:</strong> {{ city or '—' }}</div>
+      {% if not logo_data_url %}
+      <div class="company-tagline">AUTOMOTOR</div>
+      {% endif %}
+      <div class="company-line2">de Distrisuper S.R.L</div>
+      <div class="company-contact">
+        pedidosmdp@distrisuper.com<br />
+        11 de septiembre 5957 - TEL 0810-666-4500<br />
+        (CP7600) Mar del Plata - Buenos Aires
       </div>
-
-      <table class="items">
-        <thead>
-          <tr>
-            <th class="col-codigo">Código</th>
-            <th class="col-cant">Cant.</th>
-            <th class="col-un">Unid.</th>
-            <th class="col-desc">Descripción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in items %}
-          <tr>
-            <td class="col-codigo">{{ row.get('codigo', '—') }}</td>
-            <td class="col-cant">{{ row.get('cantidad', '—') }}</td>
-            <td class="col-un">{{ row.get('unidad', 'UN') }}</td>
-            <td class="col-desc">{{ row.get('descripcion', '—') }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4" style="text-align:center;">Sin ítems registrados</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </div>
+    <div class="header-center">
+      <div>
+        <span class="remito-r-box">R</span>
+        <span class="remito-num">Remito Nº<br /><span class="num">{{ remito_id or '—' }}</span></span>
+      </div>
+      {% if barcode_data_url %}
+      <div class="barcode-wrap">
+        <img src="{{ barcode_data_url }}" alt="Code 39: {{ remito_id }}" class="barcode-img" />
+      </div>
+      {% endif %}
+    </div>
+    <div class="header-right">
+      <div class="company-fiscal">
+        CUIT: 30-60924920-6<br />
+        Ing Brutos: 911-440096-1<br />
+        Ini Activ: 15/05/1995<br />
+        I.V.A RESPONSABLE INSCRIPTO<br />
+        <span class="fecha-line">Fecha: {{ fecha or '—' }}</span>
+      </div>
+    </div>
+  </div>
 
-    <!-- PR #35: Footer empujado al final -->
-    <div class="footer-wrap">
-      <div class="footer-table">
-        <div class="footer-col">
-          <div><strong>Reparto:</strong> {{ reparto or '—' }}</div>
-          <div><strong>Sucursal:</strong> {{ sucursal or '—' }}</div>
-          <div><strong>Comentarios:</strong> {{ obs or '—' }}</div>
-        </div>
-        <div class="footer-col" style="text-align: right;">
-          <div><strong>COT:</strong> {{ numero_cot or '—' }} | <strong>CAI:</strong> {{ numero_cai or '—' }}</div>
-          <div><strong>Vencimiento:</strong> {{ vencimiento or '—' }}</div>
-          <div><strong>Valor Declarado:</strong> $ {{ valor_declarado or '0.00' }}</div>
-        </div>
-      </div>
-      <div class="disclaimer">
-        {{ disclaimer or 'No olvides controlar la mercadería al recibirla. Pasados los 15 días no se aceptarán reclamos.' }}
-      </div>
+  <div class="client-block">
+    <div class="line"><strong>Cliente:</strong> {{ client_code or '—' }} - {{ client_name or '—' }} (V)</div>
+    <div class="line"><strong>Domicilio:</strong> {{ address or '—' }}</div>
+    <div class="line"><strong>Localidad:</strong> {{ city or '—' }}</div>
+  </div>
+
+  {% if items and items|length > 0 %}
+  <table class="items">
+    <thead>
+      <tr>
+        <th class="col-codigo">Código</th>
+        <th class="col-cant">Cant</th>
+        <th class="col-desc">Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in items %}
+      <tr>
+        <td class="col-codigo">{{ row.get('codigo', '—') }}</td>
+        <td class="col-cant">{{ row.get('cantidad', '—') }}</td>
+        <td class="col-desc">{{ row.get('descripcion', '—') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <table class="items">
+    <thead>
+      <tr>
+        <th class="col-codigo">Código</th>
+        <th class="col-cant">Cant</th>
+        <th class="col-desc">Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if comentarios %}
+  <div class="comentarios-block">
+    <strong>Comentarios:</strong> {{ comentarios }}
+  </div>
+  {% endif %}
+
+</div><!-- /.content-wrap -->
+
+  <div class="disclaimer">{{ disclaimer or 'No olvides controlar la mercadería, pasados los 15 días no podremos tomar tu reclamo' }}</div>
+
+  <div class="footer-wrap">
+    <div class="footer-left">
+      <div class="line">{{ reparto or '—' }}</div>
+      <div class="line">Suc: {{ sucursal or '—' }} Obs. {{ obs or '—' }}</div>
+      <div class="line">Cant unidades {{ cant_unidades or '—' }}</div>
+    </div>
+    <div class="footer-right">
+      <div class="line">Número COT {{ numero_cot or '—' }}</div>
+      <div class="line">Valor declarado: {{ valor_declarado or '—' }}</div>
+      <div class="line">Número CAI: {{ numero_cai or '—' }}</div>
+      <div class="line">Vencimiento: {{ vencimiento or '—' }}</div>
     </div>
   </div>
 </body>
