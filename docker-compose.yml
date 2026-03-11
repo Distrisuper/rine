@@ -9,6 +9,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
+      - CUPS_SERVER=${CUPS_SERVER}
     ports:
       - "8000:8000"
     volumes:
@@ -32,6 +33,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
+      - CUPS_SERVER=${CUPS_SERVER}
     volumes:
       - ./domain:/app/domain
       - ./application:/app/application
@@ -53,6 +55,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - RINE_MOCK_PRINTERS=0
       - DEBUG=${DEBUG:-false}
+      - CUPS_SERVER=${CUPS_SERVER}
     volumes:
       - ./domain:/app/domain
       - ./application:/app/application
@@ -67,9 +70,10 @@ services:
   cups:
       build:
         context: .
-        target: cups
         dockerfile: docker/cups/Dockerfile
       container_name: rine-cups
+      profiles:
+      - local
       ports:
         - "631:631"
       volumes:

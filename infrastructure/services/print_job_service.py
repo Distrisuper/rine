@@ -2,6 +2,7 @@
 Envío de trabajos de impresión a CUPS.
 Solo funciona en Linux con CUPS y pycups; en Windows no hay envío real.
 """
+import os
 import logging
 import tempfile
 from pathlib import Path
@@ -11,6 +12,13 @@ logger = logging.getLogger(__name__)
 try:
     import cups
     CUPS_AVAILABLE = True
+    # Configurar servidor remoto si existe la variable
+    cups_server = os.getenv("CUPS_SERVER")
+    if cups_server:
+        cups.setServer(cups_server)
+        # Forzar encriptación desactivada para evitar Bad Request (1024)
+        cups.setEncryption(cups.HTTP_ENCRYPT_NEVER)
+        logger.info(f"Servidor CUPS configurado: {cups_server} (Encriptación: Never)")
 except ImportError:
     CUPS_AVAILABLE = False
     cups = None

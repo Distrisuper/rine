@@ -8,6 +8,7 @@ from domain.entities.print_job import PrintJob
 from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
 from infrastructure.repositories.printer_repository import PrinterRepository
 from application.use_cases.print_jobs.print.print_job_use_case import PrintJobUseCase
+from infrastructure.api.container import container  # Asegura inyección de builders
 
 logging.basicConfig(
     level=logging.INFO,
