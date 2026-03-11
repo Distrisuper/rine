@@ -7,6 +7,7 @@ from domain.entities.print_job import PrintJob
 from domain.entities.printer import Printer
 from domain.entities.channel import Channel
 from domain.entities.template import Template
+from domain.value_objects.rendered_document import RenderedDocument
 from infrastructure.repositories.printer_repository import PrinterRepository
 from infrastructure.repositories.channel_repository import ChannelRepository
 from infrastructure.repositories.template_repository import TemplateRepository
@@ -23,7 +24,11 @@ def mock_cups():
 @pytest.fixture
 def mock_render():
     with patch("domain.entities.print_job.PrintJob.render") as mock:
-        mock.return_value = b"Fake PDF Content"
+        mock.return_value = RenderedDocument(
+            content=b"Fake PDF Content",
+            content_type="pdf",
+            title="Remito"
+        )
         yield mock
 
 def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render):

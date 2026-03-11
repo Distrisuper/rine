@@ -230,20 +230,20 @@ def get_all_templates(
 ):
     return controller()
 
-@router.get(
+@router.post(
     "/templates/preview/label/{channel_number}",
     tags=["Templates"],
     summary="Preview de etiqueta (ZPL/PNG)"
 )
 def preview_label(
     channel_number: int,
-    params: LabelPreviewRequestDTO = Depends(),
+    params: LabelPreviewRequestDTO,
     controller: PreviewLabelController = Depends(container.label_preview_controller)
 ):
     params.channel = channel_number
     return controller(params)
 
-@router.get(
+@router.post(
     "/templates/preview/label/{channel_number}/json",
     tags=["Templates"],
     summary="Preview de etiqueta (JSON)",
@@ -251,26 +251,26 @@ def preview_label(
 )
 def preview_label_json(
     channel_number: int,
-    params: LabelPreviewRequestDTO = Depends(),
+    params: LabelPreviewRequestDTO,
     controller: PreviewLabelController = Depends(container.label_preview_controller)
 ):
     params.channel = channel_number
     return controller(params, format="json")
 
-@router.get(
+@router.post(
     "/templates/preview/remito/{channel_number}",
     tags=["Templates"],
     summary="Preview de remito (PDF)"
 )
 def preview_remito(
     channel_number: int,
-    params: RemitoPreviewRequestDTO = Depends(),
+    params: RemitoPreviewRequestDTO,
     controller: PreviewRemitoController = Depends(container.remito_preview_controller)
 ):
     params.channel = channel_number
     return controller(params)
 
-@router.get(
+@router.post(
     "/templates/preview/remito/{channel_number}/json",
     tags=["Templates"],
     summary="Preview de remito (JSON)",
@@ -278,7 +278,7 @@ def preview_remito(
 )
 def preview_remito_json(
     channel_number: int,
-    params: RemitoPreviewRequestDTO = Depends(),
+    params: RemitoPreviewRequestDTO,
     controller: PreviewRemitoController = Depends(container.remito_preview_controller)
 ):
     params.channel = channel_number

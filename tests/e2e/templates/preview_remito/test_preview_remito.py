@@ -14,25 +14,27 @@ def test_preview_remito_success(client):
     template = template_repo.create(name="Base Remito", file_path="remitos/base_remito.html")
     channel_repo.create(channel_number=4, description="Channel for Remitos", template_id=template.id, document_source="INTERNAL")
     
-    # Datos del remito para Query String
+    # Datos en el Body (POST)
     items = [
         {"codigo": "P1", "cantidad": 10, "descripcion": "Product 1"}
     ]
     
-    params = {
+    payload = {
+        "channel": 4,
         "client_code": "TEST_REM",
         "client_name": "Test Remito Client",
-        "order_number": 12345,
-        "address": "Calle Falsa 123",
-        "city": "CABA",
-        "items": json.dumps(items),
-        "total": 1500.50,
-        "remito_id": "R-0001",
-        "fecha": "01/03/2026"
+        "payload": {
+            "order_number": 12345,
+            "address": "Calle Falsa 123",
+            "city": "CABA",
+            "items": items,
+            "total": 1500.50,
+            "remito_id": "R-0001",
+            "fecha": "01/03/2026"
+        }
     }
     
-    # Llamamos vía GET como define routes.py
-    response = client.get("/templates/preview/remito/4", params=params)
+    response = client.post("/templates/preview/remito/4", json=payload)
     
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/pdf"
@@ -48,7 +50,14 @@ def test_preview_remito_wrong_template_type(client):
     # Asociamos un ZPL a un canal de remito
     channel_repo.create(channel_number=4, description="Channel for ZPL", template_id=template.id, document_source="INTERNAL")
     
-    response = client.get("/templates/preview/remito/4")
+    payload = {
+        "channel": 4,
+        "client_code": "TEST",
+        "client_name": "Test Client",
+        "payload": {}
+    }
+    
+    response = client.post("/templates/preview/remito/4", json=payload)
     
     # El caso de uso lanza ValueError si el template no termina en .html
     assert response.status_code == status.HTTP_400_BAD_REQUEST

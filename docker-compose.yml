@@ -64,6 +64,20 @@ services:
       - "/dev/bus/usb:/dev/bus/usb"
     restart: always
 
+  cups:
+      build:
+        context: .
+        target: cups
+        dockerfile: docker/cups/Dockerfile
+      container_name: rine-cups
+      ports:
+        - "631:631"
+      volumes:
+        # PDFs generados por la impresora "PDF" aparecen en .data/cups-pdf en tu PC
+        - ./.data/cups-pdf:/output
+      # Opcional: en Windows no hay socket; app/workers usan CUPS_SERVER=cups:631 por red.
+      # En Raspberry con CUPS en el host, no levantes este servicio y no definas CUPS_SERVER.
+
   test:
     build:
       context: .

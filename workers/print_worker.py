@@ -52,16 +52,17 @@ class PrintWorker:
                 if not printer.is_active:
                     raise Exception(f"Impresora {printer.name} está inactiva")
 
-                content = job.render(session)
+                # Renderizado unificado
+                result = job.render(session)
 
-                template = job.get_template(session)
-                content_type = "pdf"
-                job_title = "PrintJob"
-                if template and template.file_path.lower().endswith(".zpl"):
-                    content_type = "zpl"
-                    job_title = "Etiqueta"
-
-                job_id = self._send_to_printer(printer.name, content, content_type, job_title, job.number_of_copies)
+                # Envío directo usando la info del paquete RenderedDocument
+                job_id = self._send_to_printer(
+                    printer_name=printer.name,
+                    content=result.content,
+                    content_type=result.content_type,
+                    job_title=result.title,
+                    number_of_copies=job.number_of_copies
+                )
 
                 job.cups_job_id = job_id
                 job.status = "sent"
@@ -69,7 +70,7 @@ class PrintWorker:
                 job.printer_name = printer.name
                 job.processing_since = None
 
-                logger.info(f"Job {job.id} enviado a {printer.name} (CUPS job_id={job_id})")
+                logger.info(f"Job {job.id} ({result.title}) enviado a {printer.name} (CUPS id={job_id})")
 
             except Exception as e:
                 logger.error(f"Job {job.id} falló: {e}")

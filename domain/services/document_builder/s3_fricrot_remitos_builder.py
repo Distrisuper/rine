@@ -8,27 +8,36 @@ import httpx
 from sqlmodel import Session
 
 from domain.services.document_builder.document_builder_interface import DocumentBuilder
+from domain.value_objects.rendered_document import RenderedDocument
 
 
 class S3FricRotRemitosBuilder(DocumentBuilder):
     """Retrieves pre-generated PDF from S3 (Fricrot remitos)."""
 
-    def build(self, job: Any, session: Session) -> bytes:
-        data = json.loads(job.payload)
+    def build(self, job: Any, session: Session) -> RenderedDocument:
+        data = json.loads(job.payload) if isinstance(job.payload, str) else job.payload
 
         extra = self._get_extra_data(data)
+        content = None
 
         if pdf_base64 := data.get("pdf_base64") or extra.get("pdf_base64"):
-            return base64.b64decode(pdf_base64)
+            content = base64.b64decode(pdf_base64)
 
-        if pdf_url := data.get("pdf_url") or extra.get("pdf_url"):
-            return self._download_pdf(pdf_url)
+        elif pdf_url := data.get("pdf_url") or extra.get("pdf_url"):
+            content = self._download_pdf(pdf_url)
 
-        if ftp_filename := data.get("ftp_filename") or extra.get("ftp_filename"):
-            return self._get_pdf_from_ftp_filename(ftp_filename)
+        elif ftp_filename := data.get("ftp_filename") or extra.get("ftp_filename"):
+            content = self._get_pdf_from_ftp_filename(ftp_filename)
 
-        if pdf_path := data.get("pdf_path") or extra.get("pdf_path"):
-            return self._get_pdf_from_path(pdf_path)
+        elif pdf_path := data.get("pdf_path") or extra.get("pdf_path"):
+            content = self._get_pdf_from_path(pdf_path)
+
+        if content:
+            return RenderedDocument(
+                content=content,
+                content_type="pdf",
+                title="Remito Fric-Rot (S3)"
+            )
 
         raise ValueError("Payload debe contener pdf_base64, pdf_url, ftp_filename o pdf_path")
 

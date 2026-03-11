@@ -67,11 +67,14 @@ from infrastructure.controllers.example.example_get_controller import ExampleGet
 
 # Services
 from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService as PrinterDiscoveryService
-from domain.services.label_template_service import LabelTemplateService
 from infrastructure.services.zpl_label_render_service import ZplLabelRenderer
-from domain.services.remito_template_service import RemitoTemplateService
 from infrastructure.services.html_remito_render_service import HtmlRemitoRenderer
 from infrastructure.services.barcode_service import BarcodeService
+
+from domain.services.document_builder.document_builder_factory import DocumentBuilderFactory
+from domain.services.document_builder.label_document_builder import LabelDocumentBuilder
+from domain.services.document_builder.remito_document_builder import RemitoDocumentBuilder
+from domain.services.document_builder.s3_fricrot_remitos_builder import S3FricRotRemitosBuilder
 
 class Container:
     def __init__(self):
@@ -88,16 +91,19 @@ class Container:
         self._printer_discovery_service = PrinterDiscoveryService()
         self._barcode_service = BarcodeService()
         
-        # Label Services
+        # Label/Remito Renderers
         self._label_render_service = ZplLabelRenderer(templates_path="/app/infrastructure/templates/labels")
-        self._label_template_service = LabelTemplateService(
-            renderer=self._label_render_service
-        )
-        
-        # Remito Services
         self._remito_render_service = HtmlRemitoRenderer(barcode_service=self._barcode_service)
-        self._remito_template_service = RemitoTemplateService(
-            renderer=self._remito_render_service
+
+        # Builders & Factory Setup
+        label_builder = LabelDocumentBuilder(renderer=self._label_render_service)
+        remito_builder = RemitoDocumentBuilder(renderer=self._remito_render_service)
+        s3_fricrot_builder = S3FricRotRemitosBuilder()
+        
+        DocumentBuilderFactory.set_builders(
+            label_builder=label_builder,
+            remito_builder=remito_builder,
+            s3_fricrot_builder=s3_fricrot_builder
         )
 
     # --- Health Controller ---
@@ -235,11 +241,7 @@ class Container:
 
     @lru_cache
     def init_label_preview_controller(self) -> PreviewLabelController:
-        use_case = PreviewLabelUseCase(
-            template_service=self._label_template_service,
-            channel_repo=self._channel_repo,
-            template_repo=self._template_repo
-        )
+        use_case = PreviewLabelUseCase(session=Session(self.engine))
         return PreviewLabelController(use_case)
 
     def label_preview_controller(self) -> PreviewLabelController:
@@ -247,11 +249,7 @@ class Container:
 
     @lru_cache
     def init_remito_preview_controller(self) -> PreviewRemitoController:
-        use_case = PreviewRemitoUseCase(
-            template_service=self._remito_template_service,
-            channel_repo=self._channel_repo,
-            template_repo=self._template_repo
-        )
+        use_case = PreviewRemitoUseCase(session=Session(self.engine))
         return PreviewRemitoController(use_case)
 
     def remito_preview_controller(self) -> PreviewRemitoController:
