@@ -29,6 +29,12 @@ def _mock_impresoras_habilitado() -> bool:
 try:
     import cups  # type: ignore[import-untyped]
     CUPS_AVAILABLE = True
+    # Configurar servidor remoto si existe la variable
+    cups_server = os.getenv("CUPS_SERVER")
+    if cups_server:
+        cups.setServer(cups_server)
+        # Forzar encriptación desactivada para evitar Bad Request (1024)
+        cups.setEncryption(cups.HTTP_ENCRYPT_NEVER)
 except ImportError:
     cups = None  # type: ignore
     CUPS_AVAILABLE = False

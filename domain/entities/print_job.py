@@ -6,7 +6,8 @@ import json
 from domain.value_objects import LabelRenderData, RemitoRenderData
 from domain.entities.channel import Channel
 from domain.entities.template import Template
-from domain.services.document_builder import DocumentBuilderFactory
+from domain.services.document_builder.document_builder_factory import DocumentBuilderFactory
+from domain.value_objects.rendered_document import RenderedDocument
 
 
 class PrintJob(SQLModel, table=True):
@@ -43,38 +44,52 @@ class PrintJob(SQLModel, table=True):
             select(Channel).where(Channel.channel_number == self.channel)
         ).first()
 
-    def render(self, session: Session) -> bytes:
+    def render(self, session: Session) -> RenderedDocument:
         channel = self.get_channel(session)
         if not channel:
             raise ValueError(f"Channel {self.channel} no existe")
 
-        builder = DocumentBuilderFactory.get_for(channel)
+        builder = DocumentBuilderFactory.get_for(channel, session)
         return builder.build(self, session)
 
+    def _get_payload_dict(self) -> dict:
+        """Helper para obtener el payload como diccionario, manejando string o dict."""
+        if not self.payload:
+            return {}
+        if isinstance(self.payload, dict):
+            return self.payload
+        try:
+            return json.loads(self.payload)
+        except Exception as e:
+            # Si falla el parseo, devolvemos el objeto tal cual o logueamos el error
+            return {}
+
     def get_render_data_label(self) -> LabelRenderData:
-        data = json.loads(self.payload)
+        data = self._get_payload_dict()
         return LabelRenderData(
             to=data.get("to", ""),
             address=data.get("address", ""),
             city=data.get("city", ""),
-            packages=data.get("packages", ""),
+            packages=str(data.get("packages", "")),
+            transport=data.get("transport", ""),
+            observations=data.get("observations", "")
         )
 
     def get_render_data_remito(self) -> RemitoRenderData:
-        data = json.loads(self.payload)
+        data = self._get_payload_dict()
         return RemitoRenderData(
-            client_code=data.get("client_code", ""),
-            client_name=data.get("client_name", ""),
+            client_code=self.client_code or data.get("client_code", ""),
+            client_name=self.client_name or data.get("client_name", ""),
             order_number=data.get("order_number", 0),
             address=data.get("address", ""),
             city=data.get("city", ""),
             items=data.get("items", []),
-            total=data.get("total", 0.0),
+            total=float(data.get("total", 0.0)),
             remito_id=data.get("remito_id", ""),
             fecha=data.get("fecha", ""),
             reparto=data.get("reparto"),
             sucursal=data.get("sucursal"),
-            obs=data.get("obs"),
+            obs=data.get("comentarios") or data.get("obs"),
             cant_unidades=data.get("cant_unidades"),
             valor_declarado=data.get("valor_declarado"),
             numero_cot=data.get("numero_cot"),

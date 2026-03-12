@@ -12,14 +12,18 @@ class PreviewLabelController:
         self._use_case = use_case
 
     def __call__(self, body: LabelPreviewRequestDTO, format: str = "binary"):
-        zpl_bytes = self._use_case(body)
+        # El caso de uso ahora devuelve un RenderedDocument
+        result = self._use_case(body)
         
         if format == "json":
             return JSONResponse(content={
-                "content_type": "application/vnd.zpl",
-                "size": len(zpl_bytes),
-                "content_base64": base64.b64encode(zpl_bytes).decode("ascii"),
-                "content_preview": zpl_bytes.decode("utf-8", errors="replace")[:500],
+                "content_type": f"application/vnd.{result.content_type}",
+                "size": len(result.content),
+                "content_base64": base64.b64encode(result.content).decode("ascii"),
+                "content_preview": result.content.decode("utf-8", errors="replace")[:500],
             })
         
-        return Response(content=zpl_bytes, media_type="application/vnd.zpl")
+        return Response(
+            content=result.content, 
+            media_type=f"application/vnd.{result.content_type}"
+        )

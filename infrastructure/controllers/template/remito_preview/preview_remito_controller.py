@@ -9,17 +9,18 @@ class PreviewRemitoController:
         self._use_case = use_case
 
     def __call__(self, body: RemitoPreviewRequestDTO, format: str = "binary"):
-        pdf_bytes = self._use_case(body)
+        # El caso de uso ahora devuelve un RenderedDocument
+        result = self._use_case(body)
         
         if format == "json":
             return JSONResponse(content={
                 "content_type": "application/pdf",
-                "size": len(pdf_bytes),
-                "content_base64": base64.b64encode(pdf_bytes).decode("ascii"),
+                "size": len(result.content),
+                "content_base64": base64.b64encode(result.content).decode("ascii"),
             })
         
         return Response(
-            content=pdf_bytes,
+            content=result.content,
             media_type="application/pdf",
             headers={"Content-Disposition": 'attachment; filename="remito.pdf"'},
         )

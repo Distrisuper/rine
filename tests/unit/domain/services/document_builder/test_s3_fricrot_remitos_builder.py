@@ -5,6 +5,7 @@ import os
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from domain.services.document_builder.s3_fricrot_remitos_builder import S3FricRotRemitosBuilder
+from domain.value_objects.rendered_document import RenderedDocument
 
 @pytest.fixture
 def builder():
@@ -25,7 +26,9 @@ def test_build_from_pdf_base64_direct(builder, mock_job):
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert isinstance(result, RenderedDocument)
+    assert result.content == pdf_content
+    assert result.content_type == "pdf"
 
 def test_build_from_pdf_base64_in_extra_data_dict(builder, mock_job):
     pdf_content = b"fake-pdf-content-extra"
@@ -36,7 +39,7 @@ def test_build_from_pdf_base64_in_extra_data_dict(builder, mock_job):
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert result.content == pdf_content
 
 def test_build_from_pdf_base64_in_extra_data_string(builder, mock_job):
     pdf_content = b"fake-pdf-content-extra-string"
@@ -47,7 +50,7 @@ def test_build_from_pdf_base64_in_extra_data_string(builder, mock_job):
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert result.content == pdf_content
 
 @patch("httpx.Client")
 def test_build_from_pdf_url_success(mock_client, builder, mock_job):
@@ -59,7 +62,7 @@ def test_build_from_pdf_url_success(mock_client, builder, mock_job):
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert result.content == pdf_content
     mock_instance.get.assert_called_once_with("http://example.com/file.pdf")
 
 @patch("os.getenv")
@@ -74,7 +77,7 @@ def test_build_from_ftp_filename_s3(mock_client, mock_getenv, builder, mock_job)
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert result.content == pdf_content
     mock_instance.get.assert_called_once_with("https://s3.amazonaws.com/bucket/remito_123.pdf")
 
 @patch("os.getenv")
@@ -90,8 +93,7 @@ def test_build_from_ftp_filename_local_fallback(mock_read, mock_exists, mock_get
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
-    # Should check local path /app/infrastructure/data/pdfs/local_file.pdf
+    assert result.content == pdf_content
     assert mock_exists.called
 
 @patch("pathlib.Path.exists")
@@ -105,7 +107,7 @@ def test_build_from_pdf_path_success(mock_read, mock_exists, builder, mock_job):
     
     result = builder.build(job, None)
     
-    assert result == pdf_content
+    assert result.content == pdf_content
 
 def test_build_missing_all_sources_error(builder, mock_job):
     job = mock_job({"other_field": "no-pdf-here"})

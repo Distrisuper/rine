@@ -3,15 +3,23 @@ Render de remito desde template HTML (Jinja2) + CSS → PDF con WeasyPrint.
 El formato se edita en infrastructure/templates/remitos/base_remito.html y remito.css.
 """
 import base64
+import logging
 from io import BytesIO
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML
+from weasyprint import HTML, CSS
+
+# Configurar el logger de WeasyPrint para ver errores de renderizado
+import weasyprint
+logging.getLogger('weasyprint').setLevel(logging.DEBUG)
+logging.getLogger('fontconfig').setLevel(logging.DEBUG)
 
 from domain.services.remito_renderer_interface import RemitoRenderer
 from domain.value_objects import RemitoRenderData
 from domain.services.barcode_service_interface import BarcodeServiceInterface
+
+logger = logging.getLogger(__name__)
 
 
 def _logo_data_url(templates_dir: Path) -> str | None:
@@ -52,6 +60,7 @@ def _data_to_context(data: RemitoRenderData, barcode_service: BarcodeServiceInte
         "reparto": data.reparto,
         "sucursal": data.sucursal,
         "obs": data.obs,
+        "comentarios": data.obs, # Mapeamos obs a comentarios para el template del PR
         "cant_unidades": data.cant_unidades,
         "valor_declarado": data.valor_declarado,
         "numero_cot": data.numero_cot,
@@ -97,10 +106,30 @@ class HtmlRemitoRenderer(RemitoRenderer):
         context["logo_data_url"] = _logo_data_url(self._templates_dir)
         html_string = template.render(**context)
 
+        # DEBUG: Inspección total del HTML en stdout
+        print("--- START DEBUG HTML ---")
+        print(html_string)
+        print("--- END DEBUG HTML ---")
+
         # La base_url para assets (CSS, etc) debe ser relativa a la carpeta del template
         current_template_dir = (self._templates_dir / template_path).parent
         base_url = current_template_dir.as_uri() + "/"
         
+        # PR #35: Cargar CSS explícitamente si existe
+        stylesheets = []
+        css_path = current_template_dir / "remito.css"
+
+        # DEBUG: Ver qué está pasando
+        logger.info("--- INICIO CSS RENDERIZADO ---")
+        logger.info(css_path) # Mostramos los primeros 2000 caracteres
+        logger.info("--- FIN CSS RENDERIZADO ---")
+
+        # if css_path.exists():
+        #     stylesheets.append(CSS(filename=str(css_path)))
+        
+        # # PR #35: Devolver los bytes directamente (sin buffer intermedio)
+        # return HTML(string=html_string, base_url=base_url).write_pdf()
+
         pdf_doc = HTML(string=html_string, base_url=base_url)
         buffer = BytesIO()
         pdf_doc.write_pdf(buffer)
