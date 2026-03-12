@@ -70,7 +70,7 @@ def print_raw_to_printer(
             os.fsync(f.fileno())
 
         conn = cups.Connection()
-        options = {"copies": str(number_of_copies)}
+        options = {"copies": str(number_of_copies),"raw": "true"}
         job_id = conn.printFile(printer_name, path_str, job_title, options)
         logger.info("Trabajo RAW enviado a %s: job_id=%s, size=%s bytes", printer_name, job_id, len(raw_bytes))
         return job_id
