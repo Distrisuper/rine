@@ -21,6 +21,11 @@ services:
       - ./.data:/app/.data
       - /var/run/cups:/var/run/cups
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
 
   status-worker:
     build:
@@ -44,6 +49,11 @@ services:
       - ./.data:/app/.data
       - /var/run/cups:/var/run/cups
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
 
   print-worker:
     build:
@@ -69,6 +79,11 @@ services:
     devices:
       - "/dev/bus/usb:/dev/bus/usb"
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
 
   cups:
       build:
@@ -103,3 +118,8 @@ services:
       - ./.data:/app/.data
     profiles:
       - test
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
