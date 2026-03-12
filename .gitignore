@@ -87,10 +87,17 @@ Thumbs.db
 # Redis data
 redis_data/
 
-# PDF/labels output
+# PDF/labels output (generated)
 *.pdf
 *.zpl
+
+# Templates source files (keep in repo)
+!infrastructure/templates/**/*.zpl
+!infrastructure/templates/**/*.html
 
 # Logs
 logs/
 *.log
+
+# Database
+.data/

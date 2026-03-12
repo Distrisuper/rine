@@ -1,9 +1,0 @@
-services:
-  test:
-    build:
-      context: .
-      target: test
-    env_file:
-      - ./.env
-    depends_on:
-      - redis
