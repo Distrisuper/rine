@@ -94,3 +94,65 @@ def test_status_worker_stays_sent_if_still_processing(test_engine, mock_cups_sta
     updated_job = print_job_repo.get_by_id(job_id)
     # Sigue en "sent" porque aún no termina
     assert updated_job.status == "sent"
+
+
+def test_status_worker_keeps_held_job_as_sent_and_saves_description(test_engine, mock_cups_status):
+    mock_cups_status.Connection.return_value.getJobs.return_value = {
+        44444: {
+            "job-state": 4,
+            "job-state-reasons": ["offline"],
+            "job-state-message": "The printer may not exist or is unavailable at this time.",
+        }
+    }
+
+    print_job_repo = PrintJobRepository(test_engine)
+    job = PrintJob(
+        client_code="C004",
+        client_name="Held Offline Client",
+        channel=10,
+        payload='{}',
+        status="sent",
+        cups_job_id=44444,
+        printer_name="TestPrinter",
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    worker = StatusWorker(test_engine)
+    worker._check_sent_jobs()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "sent"
+    assert "CUPS held:" in (updated_job.error_message or "")
+    assert "offline" in (updated_job.error_message or "")
+
+
+def test_status_worker_keeps_held_job_as_sent_with_non_critical_reason(test_engine, mock_cups_status):
+    mock_cups_status.Connection.return_value.getJobs.return_value = {
+        55556: {
+            "job-state": 4,
+            "job-state-reasons": ["job-data-insufficient"],
+            "job-state-message": "Job is held for policy check",
+        }
+    }
+
+    print_job_repo = PrintJobRepository(test_engine)
+    job = PrintJob(
+        client_code="C005",
+        client_name="Held Policy Client",
+        channel=10,
+        payload='{}',
+        status="sent",
+        cups_job_id=55556,
+        printer_name="TestPrinter",
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    worker = StatusWorker(test_engine)
+    worker._check_sent_jobs()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "sent"
+    assert "CUPS held:" in (updated_job.error_message or "")
+    assert "policy check" in (updated_job.error_message or "").lower()
