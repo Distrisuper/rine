@@ -94,3 +94,62 @@ def test_status_worker_stays_sent_if_still_processing(test_engine, mock_cups_sta
     updated_job = print_job_repo.get_by_id(job_id)
     # Sigue en "sent" porque aún no termina
     assert updated_job.status == "sent"
+
+
+def test_status_worker_fails_held_job_when_printer_is_unavailable(test_engine, mock_cups_status):
+    mock_cups_status.Connection.return_value.getJobs.return_value = {
+        44444: {
+            "job-state": 4,
+            "job-state-reasons": ["offline"],
+            "job-state-message": "Printer not available at this time",
+        }
+    }
+
+    print_job_repo = PrintJobRepository(test_engine)
+    job = PrintJob(
+        client_code="C004",
+        client_name="Offline Printer Client",
+        channel=10,
+        payload='{}',
+        status="sent",
+        cups_job_id=44444,
+        printer_name="TestPrinter",
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    worker = StatusWorker(test_engine)
+    worker._check_sent_jobs()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "failed"
+    assert "Impresora no disponible/apagada" in (updated_job.error_message or "")
+
+
+def test_status_worker_keeps_held_job_as_sent_without_unavailable_evidence(test_engine, mock_cups_status):
+    mock_cups_status.Connection.return_value.getJobs.return_value = {
+        55556: {
+            "job-state": 4,
+            "job-state-reasons": ["job-data-insufficient"],
+            "job-state-message": "Job is held for policy check",
+        }
+    }
+
+    print_job_repo = PrintJobRepository(test_engine)
+    job = PrintJob(
+        client_code="C005",
+        client_name="Held But Recoverable",
+        channel=10,
+        payload='{}',
+        status="sent",
+        cups_job_id=55556,
+        printer_name="TestPrinter",
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    worker = StatusWorker(test_engine)
+    worker._check_sent_jobs()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "sent"
