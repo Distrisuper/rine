@@ -76,10 +76,10 @@ class TestRemitoPayloadValidator:
             "address": "Calle Falsa 123",
             "city": "Buenos Aires",
             "items": [
-                {"descripcion": "Producto A", "cantidad": 2},
-                {"descripcion": "Producto B", "cantidad": 1}
+                {"descripcion": "Producto A", "cantidad": "2"},
+                {"descripcion": "Producto B", "cantidad": "1"}
             ],
-            "total": 1500.50,
+            "total": "1500.50",
             "remito_id": "REM-001",
             "fecha": "2024-01-15"
         }
@@ -88,7 +88,8 @@ class TestRemitoPayloadValidator:
         assert result["client_code"] == "CLIENTE001"
         assert result["order_number"] == "ORD-12345"
         assert len(result["items"]) == 2
-        assert result["total"] == 1500.50
+        assert result["items"][0]["cantidad"] == "2"
+        assert result["total"] == "1500.50"
 
     def test_optional_fields(self, validator):
         payload = {
@@ -98,7 +99,7 @@ class TestRemitoPayloadValidator:
         result = validator.validate(payload)
         
         assert result["client_code"] is None
-        assert result["total"] == 0.0
+        assert result["total"] == "0.0"
         assert result["items"] == []
 
 

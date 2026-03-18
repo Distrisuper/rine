@@ -308,7 +308,7 @@ def get_all_print_jobs(
     "/print-jobs",
     tags=["PrintJobs"],
     summary="Crear trabajo de impresión",
-    description="Crea un nuevo trabajo de impresión pendiente. El worker lo procesará.",
+    description="Crea un nuevo trabajo de impresión pendiente. `channel` y `number_of_copies` se reciben como string numérico. El worker lo procesará.",
     response_model=CreatePrintJobResponseDTO,
 )
 async def create_print_job(

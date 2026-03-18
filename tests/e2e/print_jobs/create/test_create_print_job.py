@@ -23,7 +23,7 @@ def test_create_print_job_success(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente de Prueba E2E",
         "payload": {
@@ -59,7 +59,7 @@ def test_create_print_job_validation_error(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_name": "Incompleto"
     }
     
@@ -73,15 +73,15 @@ def test_create_job_copies_zero(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"},
-        "number_of_copies": 0
+        "number_of_copies": "0"
     }
     
     response = client.post("/print-jobs", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_create_job_copies_negative(client):
@@ -90,15 +90,15 @@ def test_create_job_copies_negative(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"},
-        "number_of_copies": -5
+        "number_of_copies": "-5"
     }
     
     response = client.post("/print-jobs", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_create_job_copies_over_100(client):
@@ -107,15 +107,15 @@ def test_create_job_copies_over_100(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"},
-        "number_of_copies": 101
+        "number_of_copies": "101"
     }
     
     response = client.post("/print-jobs", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_create_job_copies_string(client):
@@ -124,7 +124,7 @@ def test_create_job_copies_string(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"},
@@ -132,7 +132,7 @@ def test_create_job_copies_string(client):
     }
     
     response = client.post("/print-jobs", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_create_job_copies_valid(client):
@@ -141,11 +141,11 @@ def test_create_job_copies_valid(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"},
-        "number_of_copies": 50
+        "number_of_copies": "50"
     }
     
     response = client.post("/print-jobs", json=payload)
@@ -160,7 +160,7 @@ def test_create_job_default_copies(client):
     setup_channel_with_template(channel_repo, template_repo, channel_number=1, file_path="labels/test.zpl")
 
     payload = {
-        "channel": 1,
+        "channel": "1",
         "client_code": "CL001",
         "client_name": "Cliente Test",
         "payload": {"to": "Test", "address": "Test", "city": "Test", "packages": "1", "transport": "OCA"}
