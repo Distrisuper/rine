@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from typing import List, Optional
 from datetime import datetime
+from sqlmodel import Session
 
 from infrastructure.api.container import container
 
@@ -307,20 +308,23 @@ def get_all_print_jobs(
     "/print-jobs",
     tags=["PrintJobs"],
     summary="Crear trabajo de impresión",
-    description="Crea un nuevo trabajo de impresión pendiente. El worker lo procesará.",
+    description="Crea un nuevo trabajo de impresión pendiente. `channel` y `number_of_copies` se reciben como string numérico. El worker lo procesará.",
     response_model=CreatePrintJobResponseDTO,
 )
 async def create_print_job(
     body: CreatePrintJobRequestDTO,
     controller: CreatePrintJobController = Depends(container.create_print_job_controller),
+    session: Session = Depends(container.get_session),
 ):
-    return controller(
-        channel=body.channel,
-        client_code=body.client_code,
-        client_name=body.client_name,
-        payload=body.payload,
-        number_of_copies=body.number_of_copies,
-    )
+    with session:
+        return controller(
+            channel=body.channel,
+            client_code=body.client_code,
+            client_name=body.client_name,
+            payload=body.payload,
+            number_of_copies=body.number_of_copies,
+            session=session,
+        )
 
 @router.post(
     "/print-jobs/print",

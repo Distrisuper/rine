@@ -1,6 +1,7 @@
 import logging
 import time
 from datetime import datetime
+from typing import Any
 from sqlmodel import Session
 
 from domain.entities.print_job import PrintJob
@@ -85,6 +86,12 @@ class StatusWorker:
                 job.error_message = f"CUPS job state: {state_name}"
                 logger.warning(f"Job {job.id} falló en CUPS: {state_name}")
                 self.print_job_repo.update(job)
+            elif state == 4:
+                # Alineado con CUPS: held/retained no es fallo terminal.
+                # El job sigue en "sent" y solo guardamos contexto operativo.
+                job.error_message = self._build_held_description(cups_job)
+                logger.warning(f"Job {job.id} retenido en CUPS: {job.error_message}")
+                self.print_job_repo.update(job)
 
             elif state == 9:
                 job.status = "printed"
@@ -104,7 +111,7 @@ class StatusWorker:
             logger.error(f"Error verificando job {job.id}: {e}")
             self._handle_check_error(job, str(e))
 
-    def _get_cups_job(self, printer_name: str, cups_job_id: int) -> dict | None:
+    def _get_cups_job(self, printer_name: str, cups_job_id: int) -> dict[str, Any] | None:
         if not CUPS_AVAILABLE or cups is None:
             logger.error("CUPS no disponible (pycups no instalado)")
             return None
@@ -115,17 +122,74 @@ class StatusWorker:
             
             if cups_job_id in jobs:
                 job_info = jobs[cups_job_id]
-                return {"job-state": job_info.get("job-state", 0)}
+                return {
+                    "job-state": job_info.get("job-state", 0),
+                    "job-state-reasons": job_info.get("job-state-reasons"),
+                    "job-printer-state-reasons": job_info.get("job-printer-state-reasons"),
+                    "job-state-message": job_info.get("job-state-message"),
+                    "job-printer-state-message": job_info.get("job-printer-state-message"),
+                }
             
             jobs_completed = conn.getJobs(which_jobs="completed", my_jobs=False)
             if cups_job_id in jobs_completed:
                 job_info = jobs_completed[cups_job_id]
-                return {"job-state": job_info.get("job-state", 9)}
+                return {
+                    "job-state": job_info.get("job-state", 9),
+                    "job-state-reasons": job_info.get("job-state-reasons"),
+                    "job-printer-state-reasons": job_info.get("job-printer-state-reasons"),
+                    "job-state-message": job_info.get("job-state-message"),
+                    "job-printer-state-message": job_info.get("job-printer-state-message"),
+                }
 
             return None
         except Exception as e:
             logger.error(f"Error consultando CUPS para job {cups_job_id}: {e}")
             return None
+
+    def _normalize_reasons(self, cups_job: dict[str, Any]) -> list[str]:
+        reasons_raw = (
+            cups_job.get("job-state-reasons")
+            or cups_job.get("job-printer-state-reasons")
+            or []
+        )
+        if isinstance(reasons_raw, (str, bytes)):
+            reasons_iterable = [reasons_raw]
+        elif isinstance(reasons_raw, (list, tuple, set)):
+            reasons_iterable = list(reasons_raw)
+        else:
+            reasons_iterable = [reasons_raw]
+
+        reasons: list[str] = []
+        for reason in reasons_iterable:
+            if isinstance(reason, bytes):
+                reasons.append(reason.decode("utf-8", errors="replace").strip())
+            else:
+                reasons.append(str(reason).strip())
+        return [reason for reason in reasons if reason and reason.lower() != "none"]
+
+    def _extract_state_message(self, cups_job: dict[str, Any]) -> str:
+        message = (
+            cups_job.get("job-state-message")
+            or cups_job.get("job-printer-state-message")
+            or ""
+        )
+        if isinstance(message, bytes):
+            return message.decode("utf-8", errors="replace").strip()
+        return str(message).strip()
+
+    def _build_held_description(self, cups_job: dict[str, Any]) -> str:
+        message = self._extract_state_message(cups_job)
+        reasons = self._normalize_reasons(cups_job)
+
+        parts: list[str] = []
+        if message:
+            parts.append(message)
+        if reasons:
+            parts.append(", ".join(reasons))
+
+        if parts:
+            return "CUPS held: " + " | ".join(parts)
+        return "CUPS held: trabajo retenido esperando disponibilidad de impresora"
 
     def _handle_job_not_found(self, job: PrintJob):
         if job.attempt_count >= self.MAX_RETRIES:
