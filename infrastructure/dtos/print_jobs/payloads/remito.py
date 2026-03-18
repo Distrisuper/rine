@@ -18,8 +18,8 @@ class RemitoPayloadDTO(BaseModel):
     reparto: Optional[str] = None
     sucursal: Optional[str] = None
     obs: Optional[str] = None
-    cant_unidades: Optional[int] = None
-    valor_declarado: Optional[float] = None
+    cant_unidades: Optional[str] = None
+    valor_declarado: Optional[str] = None
     numero_cot: Optional[str] = None
     numero_cai: Optional[str] = None
     vencimiento: Optional[str] = None
