@@ -1,10 +1,13 @@
 import json
-from fastapi import APIRouter, Depends, status, Query, HTTPException
-from typing import List, Optional
 from datetime import datetime
+from secrets import compare_digest
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlmodel import Session
 
 from infrastructure.api.container import container
+from infrastructure.config import get_settings
 
 # Controllers
 from infrastructure.controllers.printer.create.create_printer_controller import CreatePrinterController
@@ -60,6 +63,8 @@ from infrastructure.dtos.template.remito_preview.response import RemitoPreviewRe
 
 # DTOs - Health
 from infrastructure.dtos.health.response import HealthResponseDTO
+from infrastructure.dtos.admin.unlock.request import AdminUnlockRequestDTO
+from infrastructure.dtos.admin.unlock.response import AdminUnlockResponseDTO
 
 router = APIRouter()
 
@@ -67,6 +72,24 @@ router = APIRouter()
 @router.get("/health", tags=["Health"], response_model=HealthResponseDTO)
 async def health(controller: HealthController = Depends(container.health_controller)):
     return controller()
+
+
+# --- Admin ---
+@router.post(
+    "/admin/unlock",
+    tags=["Admin"],
+    summary="Validar código de seguridad del admin",
+    response_model=AdminUnlockResponseDTO,
+)
+def unlock_admin(request: AdminUnlockRequestDTO) -> AdminUnlockResponseDTO:
+    settings = get_settings()
+    if not compare_digest(request.security_code, settings.admin_security_code):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Código de seguridad inválido",
+        )
+
+    return AdminUnlockResponseDTO(unlocked=True)
 
 # --- Example ---
 @router.get("/example", tags=["Example"])
