@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class RemitoItemDTO(BaseModel):
+    codigo: Optional[str] = None
     descripcion: str
     cantidad: str = Field(..., description="Cantidad como string. Ej: '2'")
 
