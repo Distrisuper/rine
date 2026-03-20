@@ -104,7 +104,7 @@
     <tbody>
       {% for row in items %}
       <tr>
-        <td class="col-codigo">{{ row.get('codigo') or '—' }}</td>
+        <td class="col-codigo">{{ row.get('codigo') | default('—', true) }}</td>
         <td class="col-cant">{{ row.get('cantidad', '—') }}</td>
         <td class="col-desc">{{ row.get('descripcion', '—') }}</td>
       </tr>
