@@ -11,10 +11,6 @@ body {
     line-height: 1.6;
 }
 
-body.admin-locked .container {
-    display: none;
-}
-
 .container {
     max-width: 900px;
     margin: 0 auto;
