@@ -34,7 +34,7 @@ app.include_router(router)
 
 @app.middleware("http")
 async def admin_auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/admin"):
+    if request.url.path.startswith("/admin") or request.url.path.startswith("/docs"):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Basic "):
             return JSONResponse(
