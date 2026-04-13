@@ -3,7 +3,6 @@ const API_PRINTERS = '/printers';
 const API_PRINTERS_DISCOVER = '/printers/discover';
 const API_TEMPLATES = '/templates';
 const API_PRINT_JOBS = '/print-jobs';
-const API_ADMIN_UNLOCK = '/admin/unlock';
 const REFRESH_INTERVAL = 30000;
 
 let allChannels = [];
@@ -11,16 +10,9 @@ let allTemplates = [];
 let autoRefreshIntervalId = null;
 
 // Tab switching
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     setupTabs();
-
-    try {
-        await ensureAdminUnlocked();
-        document.body.classList.remove('admin-locked');
-        initializeAdminPanel();
-    } catch (error) {
-        console.error('Acceso admin cancelado:', error);
-    }
+    initializeAdminPanel();
 });
 
 function setupTabs() {
@@ -37,33 +29,6 @@ function setupTabs() {
             else if (tabName === 'print-jobs') loadPrintJobs();
         });
     });
-}
-
-async function ensureAdminUnlocked() {
-    while (true) {
-        const securityCode = window.prompt('Ingresá el código de seguridad para acceder al panel admin:');
-        if (securityCode === null) {
-            throw new Error('Acceso cancelado por el usuario');
-        }
-
-        try {
-            const response = await fetch(API_ADMIN_UNLOCK, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ security_code: securityCode })
-            });
-
-            if (response.ok) {
-                return;
-            }
-
-            const error = await response.json();
-            alert(error.detail || 'Código de seguridad inválido');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'No se pudo validar el código';
-            alert(message);
-        }
-    }
 }
 
 function initializeAdminPanel() {
