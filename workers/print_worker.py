@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class PrintWorker:
     POLL_INTERVAL = 5
     MAX_RETRIES = 3
-    LOCK_TIMEOUT = 60
+    LOCK_TIMEOUT = 180
 
     def __init__(self, engine, printer_discovery: PrinterDiscovery | None = None):
         self.engine = engine
@@ -73,8 +73,8 @@ class PrintWorker:
 
                 job.cups_job_id = job_id
                 job.status = "sent"
-                job.attempt_count += 1
                 job.printer_name = printer.name
+                job.date_sent = datetime.utcnow()
                 job.processing_since = None
 
                 logger.info(f"Job {job.id} ({result.title}) enviado a {printer.name} (CUPS id={job_id})")
@@ -90,10 +90,13 @@ class PrintWorker:
 
         statement = (
             select(PrintJob)
-            .where(PrintJob.status == "pending")
             .where(
-                (PrintJob.processing_since == None) |
-                (PrintJob.processing_since < timeout)
+                (PrintJob.status == "pending")
+                | (
+                    (PrintJob.status == "processing")
+                    & (PrintJob.processing_since != None)
+                    & (PrintJob.processing_since < timeout)
+                )
             )
             .order_by(PrintJob.date_created)
             .limit(1)
@@ -103,7 +106,10 @@ class PrintWorker:
         job = session.exec(statement).first()
 
         if job:
+            now = datetime.utcnow()
             job.processing_since = datetime.utcnow()
+            job.status = "processing"
+            job.date_started = job.date_started or now
 
         return job
 

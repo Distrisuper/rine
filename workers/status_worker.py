@@ -51,15 +51,23 @@ class StatusWorker:
             time.sleep(self.POLL_INTERVAL)
 
     def _check_sent_jobs(self):
-        jobs, _ = self.print_job_repo.get_all(status="sent", limit=500)
+        page = 1
+        limit = 500
+        total_checked = 0
 
-        if not jobs:
-            return
+        while True:
+            jobs, _ = self.print_job_repo.get_all(status="sent", page=page, limit=limit)
+            if not jobs:
+                return
 
-        logger.info(f"Verificando {len(jobs)} job(s) en CUPS")
+            logger.info(f"Verificando {len(jobs)} job(s) en CUPS (page={page})")
+            for job in jobs:
+                self._check_job_status(job)
+                total_checked += 1
 
-        for job in jobs:
-            self._check_job_status(job)
+            if len(jobs) < limit:
+                return
+            page += 1
 
     def _check_job_status(self, job: PrintJob):
         if not job.cups_job_id or not job.printer_name:
@@ -100,7 +108,8 @@ class StatusWorker:
                 self.print_job_repo.update(job)
 
             elif state == 3:
-                wait_time = (datetime.utcnow() - job.date_created).total_seconds()
+                base_time = job.date_sent or job.date_started or job.date_created
+                wait_time = (datetime.utcnow() - base_time).total_seconds()
                 if wait_time > self.MAX_WAIT_SECONDS:
                     job.status = "failed"
                     job.error_message = f"Timeout esperando en CUPS ({wait_time}s)"
@@ -113,8 +122,7 @@ class StatusWorker:
 
     def _get_cups_job(self, printer_name: str, cups_job_id: int) -> dict[str, Any] | None:
         if not CUPS_AVAILABLE or cups is None:
-            logger.error("CUPS no disponible (pycups no instalado)")
-            return None
+            raise RuntimeError("CUPS no disponible (pycups no instalado)")
 
         try:
             conn = cups.Connection()
@@ -192,23 +200,36 @@ class StatusWorker:
         return "CUPS held: trabajo retenido esperando disponibilidad de impresora"
 
     def _handle_job_not_found(self, job: PrintJob):
-        if job.attempt_count >= self.MAX_RETRIES:
+        if job.status_check_attempt_count >= self.MAX_RETRIES:
             job.status = "failed"
-            job.error_message = f"Job {job.cups_job_id} no encontrado en CUPS después de {job.attempt_count} intentos"
+            job.error_message = (
+                f"Job {job.cups_job_id} no encontrado en CUPS después de "
+                f"{job.status_check_attempt_count} intentos"
+            )
             logger.error(f"Job {job.id} falló: no encontrado en CUPS")
         else:
-            job.attempt_count += 1
-            logger.warning(f"Job {job.id} no encontrado en CUPS, incrementando retry ({job.attempt_count})")
+            job.status_check_attempt_count += 1
+            logger.warning(
+                f"Job {job.id} no encontrado en CUPS, incrementando retry "
+                f"({job.status_check_attempt_count})"
+            )
         
         self.print_job_repo.update(job)
 
     def _handle_check_error(self, job: PrintJob, error: str):
-        job.attempt_count += 1
+        job.status_check_attempt_count += 1
         job.error_message = f"Error verificando: {error}"
 
-        if job.attempt_count >= self.MAX_RETRIES:
+        if "CUPS no disponible" in error:
+            # No podemos verificar estado, pero no es evidencia de fallo de impresión.
+            self.print_job_repo.update(job)
+            return
+
+        if job.status_check_attempt_count >= self.MAX_RETRIES:
             job.status = "failed"
-            logger.error(f"Job {job.id} falló definitivamente tras {job.attempt_count} errores")
+            logger.error(
+                f"Job {job.id} falló definitivamente tras {job.status_check_attempt_count} errores"
+            )
         
         self.print_job_repo.update(job)
 

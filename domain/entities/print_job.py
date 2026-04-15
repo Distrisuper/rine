@@ -25,8 +25,10 @@ class PrintJob(SQLModel, table=True):
     print_count: int = 0
     number_of_copies: int = 1
     attempt_count: int = 0
+    status_check_attempt_count: int = 0
     date_created: datetime = Field(default_factory=datetime.utcnow)
     date_started: Optional[datetime] = None
+    date_sent: Optional[datetime] = None
     date_processed: Optional[datetime] = None
     printer_name: Optional[str] = None
     error_message: Optional[str] = None

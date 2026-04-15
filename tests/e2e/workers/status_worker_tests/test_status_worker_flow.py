@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from sqlmodel import Session
 from datetime import datetime
+from datetime import timedelta
 
 from domain.entities.print_job import PrintJob
 from infrastructure.repositories.print_job_repository import PrintJobRepository
@@ -156,3 +157,58 @@ def test_status_worker_keeps_held_job_as_sent_with_non_critical_reason(test_engi
     assert updated_job.status == "sent"
     assert "CUPS held:" in (updated_job.error_message or "")
     assert "policy check" in (updated_job.error_message or "").lower()
+
+
+def test_status_worker_does_not_timeout_based_on_date_created_if_date_sent_is_recent(
+    test_engine, mock_cups_status
+):
+    mock_cups_status.Connection.return_value.getJobs.return_value = {
+        99999: {"job-state": 3}
+    }
+
+    print_job_repo = PrintJobRepository(test_engine)
+    job = PrintJob(
+        client_code="C006",
+        client_name="Recent Sent Client",
+        channel=10,
+        payload="{}",
+        status="sent",
+        cups_job_id=99999,
+        printer_name="TestPrinter",
+        date_created=datetime.utcnow() - timedelta(hours=2),
+        date_sent=datetime.utcnow(),
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    worker = StatusWorker(test_engine)
+    worker._check_sent_jobs()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "sent"
+
+
+def test_status_worker_checks_more_than_500_sent_jobs(test_engine):
+    print_job_repo = PrintJobRepository(test_engine)
+    for i in range(600):
+        job = PrintJob(
+            client_code=f"C{i:04d}",
+            client_name="Bulk Client",
+            channel=10,
+            payload="{}",
+            status="sent",
+            cups_job_id=100000 + i,
+            printer_name="TestPrinter",
+        )
+        print_job_repo.create(job)
+
+    worker = StatusWorker(test_engine)
+    checked_ids: list[int] = []
+
+    def record(job: PrintJob) -> None:
+        checked_ids.append(job.id or 0)
+
+    worker._check_job_status = record  # type: ignore[method-assign]
+    worker._check_sent_jobs()
+
+    assert len(checked_ids) == 600

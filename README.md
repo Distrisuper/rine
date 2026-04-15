@@ -118,6 +118,21 @@ En Windows CUPS no existe y `pycups` (en `requirements.txt`) solo se instala en 
 
 **Testing:** Levantar la API (`python -m uvicorn app.main:app --reload`) y abrir `http://127.0.0.1:8000/docs` → probar `GET /printers/status`. O con curl: `curl http://127.0.0.1:8000/printers/status`.
 
+### Conexión a CUPS (socket vs CUPS_SERVER)
+
+En `docker-compose.yml` hay dos formas de que la app/workers hablen con CUPS:
+
+- **CUPS en el host Linux (Raspberry) por socket** (recomendado en la Pi):
+  - Se monta el socket: `/var/run/cups:/var/run/cups`
+  - **NO** hace falta `CUPS_SERVER`
+  - Ventaja: menos moving parts, menor latencia
+
+- **CUPS remoto o en contenedor** (útil en Windows o cuando no tenés socket):
+  - Definí `CUPS_SERVER` (ej: `cups:631` si levantás el service `cups`)
+  - No dependés del mount del socket
+
+Si ves jobs que quedan en `pending` o `sent` pero nunca avanzan, lo primero es confirmar que el contenedor realmente puede llegar a CUPS por la estrategia elegida (socket o `CUPS_SERVER`).
+
 #### Probar en Windows (sin CUPS)
 
 En Windows, sin `RINE_MOCK_PRINTERS=1`, la API responde con `_cups_unavailable: true` y `printers: {}`. Para probar la misma estructura que en la Pi (impresoras de ejemplo con estado):

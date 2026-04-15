@@ -73,8 +73,10 @@ def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render)
     assert updated_job.status == "sent"
     assert updated_job.cups_job_id == 12345
     assert updated_job.printer_name == "TestPrinter"
-    assert updated_job.attempt_count == 1
+    assert updated_job.attempt_count == 0
     assert updated_job.processing_since is None
+    assert updated_job.date_started is not None
+    assert updated_job.date_sent is not None
     printer_discovery.get_printer_status.assert_called_once_with("TestPrinter")
 
 def test_print_worker_handles_missing_printer(test_engine, mock_render):
