@@ -46,7 +46,12 @@ class PrintWorker:
             if not job:
                 return
 
-            logger.info(f"Procesando job {job.id} - channel={job.channel}")
+            logger.info(
+                "print_worker_job_start print_job_id=%s channel=%s client_code=%s",
+                job.id,
+                job.channel,
+                job.client_code,
+            )
 
             try:
                 printer = self.printer_repo.get_printer_for_channel(job.channel)
@@ -59,16 +64,27 @@ class PrintWorker:
 
                 self._ensure_printer_is_ready(printer.name)
 
-                # Renderizado unificado
+                logger.info(
+                    "print_worker_render_start print_job_id=%s channel=%s printer_name=%s",
+                    job.id,
+                    job.channel,
+                    printer.name,
+                )
                 result = job.render(session)
+                logger.info(
+                    "print_worker_render_done print_job_id=%s content_type=%s bytes=%s",
+                    job.id,
+                    result.content_type,
+                    len(result.content),
+                )
 
-                # Envío directo usando la info del paquete RenderedDocument
                 job_id = self._send_to_printer(
                     printer_name=printer.name,
                     content=result.content,
                     content_type=result.content_type,
                     job_title=result.title,
-                    number_of_copies=job.number_of_copies
+                    number_of_copies=job.number_of_copies,
+                    print_job_id=job.id,
                 )
 
                 job.cups_job_id = job_id
@@ -77,10 +93,20 @@ class PrintWorker:
                 job.printer_name = printer.name
                 job.processing_since = None
 
-                logger.info(f"Job {job.id} ({result.title}) enviado a {printer.name} (CUPS id={job_id})")
+                logger.info(
+                    "print_worker_cups_submit_ok print_job_id=%s printer_name=%s cups_job_id=%s title=%s",
+                    job.id,
+                    printer.name,
+                    job_id,
+                    result.title,
+                )
 
             except Exception as e:
-                logger.error(f"Job {job.id} falló: {e}")
+                logger.exception(
+                    "print_worker_job_failed print_job_id=%s channel=%s",
+                    job.id,
+                    job.channel,
+                )
                 self._handle_failure(job, str(e))
 
             session.commit()
@@ -107,10 +133,32 @@ class PrintWorker:
 
         return job
 
-    def _send_to_printer(self, printer_name: str, content: bytes, content_type: str, job_title: str, number_of_copies: int = 1) -> int:
-        logger.info(f"Enviando a {printer_name} (type={content_type})")
-        job_id = self.print_use_case(printer_name, content, content_type, job_title, number_of_copies)
-        logger.info(f"Trabajo enviado a CUPS: job_id={job_id}")
+    def _send_to_printer(
+        self,
+        printer_name: str,
+        content: bytes,
+        content_type: str,
+        job_title: str,
+        number_of_copies: int = 1,
+        *,
+        print_job_id: int,
+    ) -> int:
+        logger.info(
+            "print_worker_cups_submit print_job_id=%s printer_name=%s content_type=%s copies=%s job_title=%s",
+            print_job_id,
+            printer_name,
+            content_type,
+            number_of_copies,
+            job_title,
+        )
+        job_id = self.print_use_case(
+            printer_name,
+            content,
+            content_type,
+            job_title,
+            number_of_copies,
+            print_job_id=print_job_id,
+        )
         return job_id
 
     def _ensure_printer_is_ready(self, printer_name: str) -> None:

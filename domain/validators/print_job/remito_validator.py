@@ -5,4 +5,4 @@ from infrastructure.dtos.print_jobs.payloads.remito import RemitoPayloadDTO
 class RemitoPayloadValidator(PayloadValidator):
     def validate(self, payload: dict[str, Any]) -> dict[str, Any]:
         validated = RemitoPayloadDTO(**payload)
-        return validated.model_dump()
+        return validated.model_dump(exclude_none=True)

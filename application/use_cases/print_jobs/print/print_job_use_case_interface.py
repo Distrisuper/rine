@@ -9,5 +9,7 @@ class PrintJobUseCaseInterface(ABC):
         content: bytes,
         content_type: str,
         job_title: str,
+        number_of_copies: int = 1,
+        print_job_id: int | None = None,
     ) -> int:
         pass

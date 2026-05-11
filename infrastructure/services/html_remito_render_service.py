@@ -4,16 +4,15 @@ El formato se edita en infrastructure/templates/remitos/base_remito.html y remit
 """
 import base64
 import logging
+import os
 from io import BytesIO
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML, CSS
+from weasyprint import HTML
 
-# Configurar el logger de WeasyPrint para ver errores de renderizado
-import weasyprint
-logging.getLogger('weasyprint').setLevel(logging.DEBUG)
-logging.getLogger('fontconfig').setLevel(logging.DEBUG)
+logging.getLogger("weasyprint").setLevel(logging.WARNING)
+logging.getLogger("fontconfig").setLevel(logging.WARNING)
 
 from domain.services.remito_renderer_interface import RemitoRenderer
 from domain.value_objects import RemitoRenderData
@@ -106,23 +105,17 @@ class HtmlRemitoRenderer(RemitoRenderer):
         context["logo_data_url"] = _logo_data_url(self._templates_dir)
         html_string = template.render(**context)
 
-        # DEBUG: Inspección total del HTML en stdout
-        print("--- START DEBUG HTML ---")
-        print(html_string)
-        print("--- END DEBUG HTML ---")
+        if os.getenv("DEBUG_REMITO_HTML", "").strip().lower() in ("1", "true", "yes"):
+            print("--- START DEBUG HTML ---")
+            print(html_string)
+            print("--- END DEBUG HTML ---")
 
         # La base_url para assets (CSS, etc) debe ser relativa a la carpeta del template
         current_template_dir = (self._templates_dir / template_path).parent
         base_url = current_template_dir.as_uri() + "/"
-        
-        # PR #35: Cargar CSS explícitamente si existe
-        stylesheets = []
-        css_path = current_template_dir / "remito.css"
 
-        # DEBUG: Ver qué está pasando
-        logger.info("--- INICIO CSS RENDERIZADO ---")
-        logger.info(css_path) # Mostramos los primeros 2000 caracteres
-        logger.info("--- FIN CSS RENDERIZADO ---")
+        css_path = current_template_dir / "remito.css"
+        logger.debug("remito_css_path=%s exists=%s", css_path, css_path.exists())
 
         # if css_path.exists():
         #     stylesheets.append(CSS(filename=str(css_path)))

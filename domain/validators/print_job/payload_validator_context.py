@@ -1,5 +1,7 @@
-from typing import Any, Optional
+from typing import Any
+
 from domain.validators.payload_validator_interface import PayloadValidator
+from domain.validators.print_job.remito_validator import RemitoPayloadValidator
 
 class PayloadValidatorContext:
     _validators: dict[str, PayloadValidator] = {}
@@ -19,6 +21,14 @@ class PayloadValidatorContext:
     def validate(cls, document_source: str, payload: dict[str, Any]) -> dict[str, Any]:
         validator = cls.get_validator(document_source)
         return validator.validate(payload)
+
+
+def _has_nonempty_client_str(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
 
 
 class PayloadValidatorResolver:
@@ -52,6 +62,24 @@ class PayloadValidatorResolver:
         
         raise ValueError(f"document_source '{document_source}' no soportado")
     
-    def validate_payload(self, channel_number: int, payload: dict[str, Any], session) -> dict[str, Any]:
+    def validate_payload(
+        self,
+        channel_number: int,
+        payload: dict[str, Any],
+        session,
+        *,
+        client_code: str | None = None,
+        client_name: str | None = None,
+    ) -> dict[str, Any]:
+        working = dict(payload)
         validator = self.get_validator_for_channel(channel_number, session)
-        return validator.validate(payload)
+        if (
+            client_code is not None
+            and client_name is not None
+            and isinstance(validator, RemitoPayloadValidator)
+        ):
+            if not _has_nonempty_client_str(working.get("client_code")):
+                working["client_code"] = client_code.strip()
+            if not _has_nonempty_client_str(working.get("client_name")):
+                working["client_name"] = client_name.strip()
+        return validator.validate(working)

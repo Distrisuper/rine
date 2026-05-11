@@ -1,10 +1,14 @@
 import json
+import logging
 from datetime import datetime
 from application.use_cases.print_jobs.create.create_print_job_use_case_interface import (
     CreatePrintJobUseCaseInterface,
 )
 from domain.entities.print_job import PrintJob
 from domain.repositories.print_job_repository_interface import PrintJobRepositoryInterface
+
+logger = logging.getLogger(__name__)
+
 
 class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
     def __init__(self, repo: PrintJobRepositoryInterface):
@@ -31,6 +35,14 @@ class CreatePrintJobUseCase(CreatePrintJobUseCaseInterface):
         )
 
         saved_job = self._repo.create(job)
+
+        logger.info(
+            "print_job_created print_job_id=%s channel=%s status=%s client_code=%s",
+            saved_job.id,
+            saved_job.channel,
+            saved_job.status,
+            saved_job.client_code,
+        )
 
         return {
             "id": saved_job.id,
