@@ -59,7 +59,13 @@ def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render)
     job_id = job.id
 
     # 2. Run Worker (single pass)
-    worker = PrintWorker(test_engine)
+    printer_discovery = MagicMock()
+    printer_discovery.get_printer_status.return_value = {
+        "ready": True,
+        "detalles": [],
+    }
+
+    worker = PrintWorker(test_engine, printer_discovery=printer_discovery)
     worker._process_one_job()
 
     # 3. Verify Results
@@ -69,6 +75,7 @@ def test_print_worker_processes_pending_job(test_engine, mock_cups, mock_render)
     assert updated_job.printer_name == "TestPrinter"
     assert updated_job.attempt_count == 1
     assert updated_job.processing_since is None
+    printer_discovery.get_printer_status.assert_called_once_with("TestPrinter")
 
 def test_print_worker_handles_missing_printer(test_engine, mock_render):
     # Setup job for a channel that has no printer
@@ -93,3 +100,88 @@ def test_print_worker_handles_missing_printer(test_engine, mock_render):
     assert updated_job.status == "pending"
     assert updated_job.attempt_count == 1
     assert "No hay impresora configurada" in updated_job.error_message
+
+
+def test_print_worker_retries_when_printer_is_not_ready(test_engine, mock_cups, mock_render):
+    template_repo = TemplateRepository(test_engine)
+    channel_repo = ChannelRepository(test_engine)
+    printer_repo = PrinterRepository(test_engine)
+    print_job_repo = PrintJobRepository(test_engine)
+
+    template = template_repo.create(name="Test Template", file_path="test.html")
+    channel = channel_repo.create(
+        channel_number=11,
+        description="Blocked Channel",
+        template_id=template.id,
+        document_source="INTERNAL",
+    )
+    printer_repo.create_printer(name="BlockedPrinter", channel_ids=[channel.id])
+
+    job = PrintJob(
+        client_code="C003",
+        client_name="Blocked Client",
+        channel=11,
+        payload='{"to": "Jane Doe"}',
+        status="pending",
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    printer_discovery = MagicMock()
+    printer_discovery.get_printer_status.return_value = {
+        "ready": False,
+        "detalles": ["paper-empty", "paused"],
+    }
+
+    worker = PrintWorker(test_engine, printer_discovery=printer_discovery)
+    worker._process_one_job()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "pending"
+    assert updated_job.attempt_count == 1
+    assert updated_job.error_message == "paper-empty, paused"
+    assert updated_job.cups_job_id is None
+
+
+def test_print_worker_uses_technical_fallback_when_status_is_unavailable(
+    test_engine, mock_cups, mock_render
+):
+    template_repo = TemplateRepository(test_engine)
+    channel_repo = ChannelRepository(test_engine)
+    printer_repo = PrinterRepository(test_engine)
+    print_job_repo = PrintJobRepository(test_engine)
+
+    template = template_repo.create(name="Test Template", file_path="test.html")
+    channel = channel_repo.create(
+        channel_number=12,
+        description="Unavailable Channel",
+        template_id=template.id,
+        document_source="INTERNAL",
+    )
+    printer_repo.create_printer(name="UnavailablePrinter", channel_ids=[channel.id])
+
+    job = PrintJob(
+        client_code="C004",
+        client_name="Unavailable Client",
+        channel=12,
+        payload='{"to": "Jane Doe"}',
+        status="pending",
+        attempt_count=2,
+    )
+    print_job_repo.create(job)
+    job_id = job.id
+
+    printer_discovery = MagicMock()
+    printer_discovery.get_printer_status.return_value = None
+
+    worker = PrintWorker(test_engine, printer_discovery=printer_discovery)
+    worker._process_one_job()
+
+    updated_job = print_job_repo.get_by_id(job_id)
+    assert updated_job.status == "failed"
+    assert updated_job.attempt_count == 3
+    assert (
+        updated_job.error_message
+        == "No se pudo obtener estado de CUPS para printer_name=UnavailablePrinter"
+    )
+    assert updated_job.cups_job_id is None

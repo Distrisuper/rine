@@ -7,9 +7,15 @@ const REFRESH_INTERVAL = 30000;
 
 let allChannels = [];
 let allTemplates = [];
+let autoRefreshIntervalId = null;
 
 // Tab switching
 document.addEventListener('DOMContentLoaded', () => {
+    setupTabs();
+    initializeAdminPanel();
+});
+
+function setupTabs() {
     const tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -23,17 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (tabName === 'print-jobs') loadPrintJobs();
         });
     });
-    
+}
+
+function initializeAdminPanel() {
     loadChannels();
     loadPrinters();
     loadPrinterOptionsForFilter();
-    setInterval(() => {
+
+    if (autoRefreshIntervalId) {
+        clearInterval(autoRefreshIntervalId);
+    }
+
+    autoRefreshIntervalId = setInterval(() => {
         const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
         if (activeTab === 'channels') loadChannels();
         else if (activeTab === 'printers') loadPrinters();
         else if (activeTab === 'print-jobs') loadPrintJobs();
     }, REFRESH_INTERVAL);
-});
+}
 
 // ============ CHANNELS ============
 

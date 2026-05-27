@@ -76,6 +76,11 @@ from domain.services.document_builder.label_document_builder import LabelDocumen
 from domain.services.document_builder.remito_document_builder import RemitoDocumentBuilder
 from domain.services.document_builder.s3_fricrot_remitos_builder import S3FricRotRemitosBuilder
 
+from domain.validators.print_job.payload_validator_context import PayloadValidatorContext
+from domain.validators.print_job.label_validator import LabelPayloadValidator
+from domain.validators.print_job.remito_validator import RemitoPayloadValidator
+from domain.validators.print_job.s3_fricrot_validator import S3FricRotPayloadValidator
+
 class Container:
     def __init__(self):
         db_url = os.getenv("DATABASE_URL", "sqlite:///./rine.db")
@@ -105,6 +110,11 @@ class Container:
             remito_builder=remito_builder,
             s3_fricrot_builder=s3_fricrot_builder
         )
+
+        # Payload Validators Setup
+        PayloadValidatorContext.register("INTERNAL_LABEL", LabelPayloadValidator())
+        PayloadValidatorContext.register("INTERNAL_REMITO", RemitoPayloadValidator())
+        PayloadValidatorContext.register("S3_REMITOS_FRIC_ROT", S3FricRotPayloadValidator())
 
     # --- Health Controller ---
     @lru_cache
@@ -267,8 +277,10 @@ class Container:
 
     @lru_cache
     def init_create_print_job_controller(self) -> CreatePrintJobController:
+        from domain.validators.print_job.payload_validator_context import PayloadValidatorResolver
+        resolver = PayloadValidatorResolver(self._channel_repo)
         use_case = CreatePrintJobUseCase(self._print_job_repo)
-        return CreatePrintJobController(use_case)
+        return CreatePrintJobController(use_case=use_case, payload_validator_resolver=resolver)
 
     def create_print_job_controller(self) -> CreatePrintJobController:
         return self.init_create_print_job_controller()
@@ -280,5 +292,8 @@ class Container:
 
     def print_job_controller(self) -> PrintJobController:
         return self.init_print_job_controller()
+
+    def get_session(self) -> Session:
+        return Session(self.engine)
 
 container = Container()

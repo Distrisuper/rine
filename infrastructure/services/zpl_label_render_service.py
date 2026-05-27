@@ -33,7 +33,9 @@ class ZplLabelRenderer(LabelRenderer):
             "to": data.to,
             "address": data.address,
             "city": data.city,
-            "packages": data.packages
+            "packages": data.packages,
+            "transport": data.transport,
+            "observations": data.observations,
         }
         
         rendered_zpl = template.render(**context)

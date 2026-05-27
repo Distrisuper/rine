@@ -80,7 +80,7 @@ class PrintJob(SQLModel, table=True):
         return RemitoRenderData(
             client_code=self.client_code or data.get("client_code", ""),
             client_name=self.client_name or data.get("client_name", ""),
-            order_number=data.get("order_number", 0),
+            order_number=str(data.get("order_number", "")),
             address=data.get("address", ""),
             city=data.get("city", ""),
             items=data.get("items", []),

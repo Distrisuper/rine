@@ -1,0 +1,161 @@
+{
+  "info": {
+    "_postman_id": "9dce03db-6a53-4f49-9a6e-8f2d7c8f5b11",
+    "name": "RINE - PrintJobs Validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "rine-agent"
+  },
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PrintJobs - 200 valido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 OK\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Devuelve pending + id\", function () {",
+              "  const r = pm.response.json();",
+              "  pm.expect(r.status).to.eql(\"pending\");",
+              "  pm.expect(r).to.have.property(\"id\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"4\",\n  \"client_code\": \"05451\",\n  \"client_name\": \"REPUESJOR SRL\",\n  \"payload\": {\n    \"order_number\": \"PED-2026-00045\",\n    \"address\": \"Av. Colon 1234\",\n    \"city\": \"Mar del Plata\",\n    \"items\": [\n      { \"descripcion\": \"Filtro de aceite\", \"cantidad\": \"2\" },\n      { \"descripcion\": \"Correa distribucion\", \"cantidad\": \"1\" }\n    ],\n    \"total\": \"185000.50\",\n    \"remito_id\": \"REM-000987\",\n    \"fecha\": \"2026-03-17\"\n  },\n  \"number_of_copies\": \"1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/print-jobs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "print-jobs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PrintJobs - 400 number_of_copies invalido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 Bad Request\", function () {",
+              "  pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Mensaje menciona number_of_copies\", function () {",
+              "  const r = pm.response.json();",
+              "  pm.expect(r.detail).to.include(\"number_of_copies\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"4\",\n  \"client_code\": \"05451\",\n  \"client_name\": \"REPUESJOR SRL\",\n  \"payload\": {\n    \"order_number\": \"PED-2026-00045\",\n    \"address\": \"Av. Colon 1234\",\n    \"city\": \"Mar del Plata\",\n    \"items\": [\n      { \"descripcion\": \"Filtro de aceite\", \"cantidad\": \"2\" }\n    ],\n    \"total\": \"185000.50\"\n  },\n  \"number_of_copies\": \"abc\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/print-jobs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "print-jobs"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PrintJobs - 422 falta client_code",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"422 Unprocessable Entity\", function () {",
+              "  pm.response.to.have.status(422);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"channel\": \"4\",\n  \"client_name\": \"Sin client_code\",\n  \"payload\": {\n    \"order_number\": \"PED-1\",\n    \"address\": \"Test\",\n    \"city\": \"MDQ\",\n    \"items\": [{ \"descripcion\": \"X\", \"cantidad\": \"1\" }],\n    \"total\": \"10.00\"\n  },\n  \"number_of_copies\": \"1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/print-jobs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "print-jobs"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://distrimdp.dvrdns.org"
+    }
+  ]
+}

@@ -1,12 +1,15 @@
 import logging
 import time
 from datetime import datetime, timedelta
+from typing import Any
 
 from sqlmodel import Session, select
 
 from domain.entities.print_job import PrintJob
 from domain.repositories.printer_repository_interface import PrinterRepositoryInterface
+from domain.services.printer_discovery_interface import PrinterDiscovery
 from infrastructure.repositories.printer_repository import PrinterRepository
+from infrastructure.services.printer_discovery_service import CupsPrinterDiscoveryService
 from application.use_cases.print_jobs.print.print_job_use_case import PrintJobUseCase
 from infrastructure.api.container import container  # Asegura inyección de builders
 
@@ -22,9 +25,10 @@ class PrintWorker:
     MAX_RETRIES = 3
     LOCK_TIMEOUT = 60
 
-    def __init__(self, engine):
+    def __init__(self, engine, printer_discovery: PrinterDiscovery | None = None):
         self.engine = engine
         self.printer_repo: PrinterRepositoryInterface = PrinterRepository(engine)
+        self.printer_discovery = printer_discovery or CupsPrinterDiscoveryService()
         self.print_use_case = PrintJobUseCase()
 
     def run_forever(self):
@@ -52,6 +56,8 @@ class PrintWorker:
 
                 if not printer.is_active:
                     raise Exception(f"Impresora {printer.name} está inactiva")
+
+                self._ensure_printer_is_ready(printer.name)
 
                 # Renderizado unificado
                 result = job.render(session)
@@ -106,6 +112,29 @@ class PrintWorker:
         job_id = self.print_use_case(printer_name, content, content_type, job_title, number_of_copies)
         logger.info(f"Trabajo enviado a CUPS: job_id={job_id}")
         return job_id
+
+    def _ensure_printer_is_ready(self, printer_name: str) -> None:
+        printer_status = self.printer_discovery.get_printer_status(printer_name)
+        if printer_status is None:
+            raise Exception(f"No se pudo obtener estado de CUPS para printer_name={printer_name}")
+
+        if printer_status.get("ready") is True:
+            return
+
+        raise Exception(self._build_printer_status_error_message(printer_name, printer_status))
+
+    def _build_printer_status_error_message(
+        self, printer_name: str, printer_status: dict[str, Any]
+    ) -> str:
+        details = printer_status.get("detalles")
+        if isinstance(details, list):
+            normalized_details = [
+                str(detail).strip() for detail in details if str(detail).strip()
+            ]
+            if normalized_details:
+                return ", ".join(normalized_details)
+
+        return f"No se pudo obtener estado de CUPS para printer_name={printer_name}"
 
     def _handle_failure(self, job: PrintJob, error: str):
         job.attempt_count += 1
