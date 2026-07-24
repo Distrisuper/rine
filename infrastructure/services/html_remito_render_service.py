@@ -22,6 +22,17 @@ from domain.services.barcode_service_interface import BarcodeServiceInterface
 logger = logging.getLogger(__name__)
 
 
+def _calcular_total_articulos(items: list[dict]) -> str:
+    """Suma el campo 'cantidad' de los items del remito (acepta str o número)."""
+    total = 0.0
+    for row in items:
+        try:
+            total += float(row.get("cantidad", 0) or 0)
+        except (TypeError, ValueError):
+            continue
+    return str(int(total)) if total.is_integer() else str(total)
+
+
 def _logo_data_url(templates_dir: Path) -> str | None:
     """
     Si existe logo.png o logo.svg en la carpeta de templates, lo lee y devuelve
@@ -54,6 +65,7 @@ def _data_to_context(data: RemitoRenderData, barcode_service: BarcodeServiceInte
         "city": data.city,
         "items": data.items,
         "total": data.total,
+        "total_articulos": _calcular_total_articulos(data.items),
         "remito_id": remito_id,
         "barcode_data_url": barcode_service.to_svg_data_url(remito_id),
         "fecha": data.fecha,
