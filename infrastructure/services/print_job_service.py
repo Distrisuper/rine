@@ -24,7 +24,14 @@ except ImportError:
     cups = None
 
 
-def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "Remito", number_of_copies: int = 1) -> int:
+def print_pdf_to_printer(
+    printer_name: str,
+    pdf_bytes: bytes,
+    job_title: str = "Remito",
+    number_of_copies: int = 1,
+    *,
+    print_job_id: int | None = None,
+) -> int:
     """
     Envía un PDF a una cola CUPS por nombre.
     """
@@ -42,7 +49,13 @@ def print_pdf_to_printer(printer_name: str, pdf_bytes: bytes, job_title: str = "
         conn = cups.Connection()
         options = {"copies": str(number_of_copies)}
         job_id = conn.printFile(printer_name, path_str, job_title, options)
-        logger.info("Trabajo PDF enviado a %s: job_id=%s, size=%s bytes", printer_name, job_id, len(pdf_bytes))
+        logger.info(
+            "cups_accepted content_type=pdf print_job_id=%s printer_name=%s cups_job_id=%s size_bytes=%s",
+            print_job_id,
+            printer_name,
+            job_id,
+            len(pdf_bytes),
+        )
         return job_id
     finally:
         if os.path.exists(path_str):
@@ -55,6 +68,8 @@ def print_raw_to_printer(
     job_title: str = "Etiqueta",
     number_of_copies: int = 1,
     suffix: str = ".zpl",
+    *,
+    print_job_id: int | None = None,
 ) -> int:
     """
     Envía datos en bruto (ZPL) a una cola CUPS.
@@ -72,7 +87,13 @@ def print_raw_to_printer(
         conn = cups.Connection()
         options = {"copies": str(number_of_copies),"raw": "true"}
         job_id = conn.printFile(printer_name, path_str, job_title, options)
-        logger.info("Trabajo RAW enviado a %s: job_id=%s, size=%s bytes", printer_name, job_id, len(raw_bytes))
+        logger.info(
+            "cups_accepted content_type=raw print_job_id=%s printer_name=%s cups_job_id=%s size_bytes=%s",
+            print_job_id,
+            printer_name,
+            job_id,
+            len(raw_bytes),
+        )
         return job_id
     finally:
         if os.path.exists(path_str):

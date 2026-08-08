@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Index, Session, select
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 import json
 
 from domain.value_objects import LabelRenderData, RemitoRenderData
@@ -8,6 +8,25 @@ from domain.entities.channel import Channel
 from domain.entities.template import Template
 from domain.services.document_builder.document_builder_factory import DocumentBuilderFactory
 from domain.value_objects.rendered_document import RenderedDocument
+
+
+def _payload_str(data: dict[str, Any], key: str, default: str = "") -> str:
+    """Evita que JSON null (`key` presente con valor None) rompa campos str del render."""
+    if key not in data:
+        return default
+    value = data[key]
+    if value is None:
+        return default
+    return str(value)
+
+
+def _payload_float(data: dict[str, Any], key: str, default: float = 0.0) -> float:
+    if key not in data:
+        return default
+    value = data[key]
+    if value is None:
+        return default
+    return float(value)
 
 
 class PrintJob(SQLModel, table=True):
@@ -77,16 +96,20 @@ class PrintJob(SQLModel, table=True):
 
     def get_render_data_remito(self) -> RemitoRenderData:
         data = self._get_payload_dict()
+        client_code = (self.client_code or "").strip() or _payload_str(data, "client_code")
+        client_name = (self.client_name or "").strip() or _payload_str(data, "client_name")
+        items_raw = data.get("items")
+        items: list = items_raw if isinstance(items_raw, list) else []
         return RemitoRenderData(
-            client_code=self.client_code or data.get("client_code", ""),
-            client_name=self.client_name or data.get("client_name", ""),
-            order_number=str(data.get("order_number", "")),
-            address=data.get("address", ""),
-            city=data.get("city", ""),
-            items=data.get("items", []),
-            total=float(data.get("total", 0.0)),
-            remito_id=data.get("remito_id", ""),
-            fecha=data.get("fecha", ""),
+            client_code=client_code,
+            client_name=client_name,
+            order_number=_payload_str(data, "order_number"),
+            address=_payload_str(data, "address"),
+            city=_payload_str(data, "city"),
+            items=items,
+            total=_payload_float(data, "total", 0.0),
+            remito_id=_payload_str(data, "remito_id"),
+            fecha=_payload_str(data, "fecha"),
             reparto=data.get("reparto"),
             sucursal=data.get("sucursal"),
             obs=data.get("comentarios") or data.get("obs"),

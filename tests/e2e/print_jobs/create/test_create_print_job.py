@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from fastapi import status
 from sqlmodel import Session, select
@@ -15,6 +17,42 @@ def setup_channel_with_template(channel_repo, template_repo, channel_number: int
         template_id=template.id,
         document_source="INTERNAL"
     )
+
+
+def test_create_print_job_remito_backfills_client_from_root(client):
+    """Payload con client_* null: se completan desde la raíz del POST antes de validar."""
+    template_repo = TemplateRepository(engine)
+    channel_repo = ChannelRepository(engine)
+    setup_channel_with_template(
+        channel_repo, template_repo, channel_number=9, file_path="remitos/base_remito.html"
+    )
+
+    payload = {
+        "channel": "9",
+        "client_code": "ROOT-01",
+        "client_name": "Cliente Desde Raiz",
+        "payload": {
+            "client_code": None,
+            "client_name": None,
+            "order_number": "12-150189",
+            "address": "AV. GONZALEZ CHAVES 378",
+            "city": "BALCARCE - BUENOS AIRES",
+            "items": [{"codigo": "P1", "descripcion": "Pieza", "cantidad": "1"}],
+            "total": "100.00",
+            "remito_id": "12-150189",
+            "fecha": "2026-05-07",
+        },
+    }
+    response = client.post("/print-jobs", json=payload)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    with Session(engine) as session:
+        job = session.get(PrintJob, data["id"])
+        assert job is not None
+        stored = json.loads(job.payload)
+        assert stored["client_code"] == "ROOT-01"
+        assert stored["client_name"] == "Cliente Desde Raiz"
+        assert "cant_unidades" not in stored
 
 
 def test_create_print_job_success(client):

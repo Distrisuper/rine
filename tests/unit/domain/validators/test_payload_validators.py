@@ -92,14 +92,25 @@ class TestRemitoPayloadValidator:
         assert result["items"][0]["cantidad"] == "2"
         assert result["total"] == "1500.50"
 
-    def test_optional_fields(self, validator):
+    def test_missing_client_fields_raises(self, validator):
         payload = {
             "order_number": "ORD-12345",
-            "address": "Calle Falsa 123"
+            "address": "Calle Falsa 123",
+            "city": "Buenos Aires",
+        }
+        with pytest.raises(ValidationError):
+            validator.validate(payload)
+
+    def test_minimal_payload_with_client(self, validator):
+        payload = {
+            "client_code": "C1",
+            "client_name": "Nombre",
+            "order_number": "ORD-12345",
+            "address": "Calle Falsa 123",
         }
         result = validator.validate(payload)
-        
-        assert result["client_code"] is None
+        assert result["client_code"] == "C1"
+        assert result["client_name"] == "Nombre"
         assert result["total"] == "0.0"
         assert result["items"] == []
 
