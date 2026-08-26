@@ -72,7 +72,7 @@ class PrintJob(SQLModel, table=True):
             city=data.get("city", ""),
             packages=str(data.get("packages", "")),
             transport=data.get("transport", ""),
-            observations=data.get("observations", "")
+            observations=data.get("observations") or data.get("comentarios") or data.get("obs") or ""
         )
 
     def get_render_data_remito(self) -> RemitoRenderData:

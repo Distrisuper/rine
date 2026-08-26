@@ -62,6 +62,61 @@ class TestLabelPayloadValidator:
         result = validator.validate(payload)
         assert result["packages"] == 5
 
+    def test_comentarios_alias_is_mapped_to_observations(self, validator):
+        payload = {
+            "to": "Juan Perez",
+            "address": "Calle Falsa 123",
+            "city": "Buenos Aires",
+            "packages": "1",
+            "transport": "OCA",
+            "comentarios": "DROPSHIPPING urgente"
+        }
+        result = validator.validate(payload)
+
+        assert result["observations"] == "DROPSHIPPING urgente"
+        assert "comentarios" not in result
+
+    def test_obs_alias_is_mapped_to_observations(self, validator):
+        payload = {
+            "to": "Juan Perez",
+            "address": "Calle Falsa 123",
+            "city": "Buenos Aires",
+            "packages": "1",
+            "transport": "OCA",
+            "obs": "DROPSHIPPING urgente"
+        }
+        result = validator.validate(payload)
+
+        assert result["observations"] == "DROPSHIPPING urgente"
+        assert "obs" not in result
+
+    def test_observations_takes_precedence_over_aliases(self, validator):
+        payload = {
+            "to": "Juan Perez",
+            "address": "Calle Falsa 123",
+            "city": "Buenos Aires",
+            "packages": "1",
+            "transport": "OCA",
+            "observations": "texto real",
+            "comentarios": "no debería usarse",
+            "obs": "tampoco debería usarse"
+        }
+        result = validator.validate(payload)
+
+        assert result["observations"] == "texto real"
+
+    def test_no_observations_or_aliases_defaults_to_empty(self, validator):
+        payload = {
+            "to": "Juan Perez",
+            "address": "Calle Falsa 123",
+            "city": "Buenos Aires",
+            "packages": "1",
+            "transport": "OCA"
+        }
+        result = validator.validate(payload)
+
+        assert result["observations"] == ""
+
 
 class TestRemitoPayloadValidator:
     @pytest.fixture
