@@ -33,6 +33,8 @@ class CreatePrintJobController:
             channel_number=parsed_channel,
             payload=payload,
             session=session,
+            client_code=client_code,
+            client_name=client_name,
         )
         return self._use_case(
             parsed_channel,

@@ -89,6 +89,8 @@ def test_create_print_job_controller_success_calls_resolver_and_use_case() -> No
         channel_number=1,
         payload={"to": "Juan"},
         session=fake_session,
+        client_code="CL001",
+        client_name="Cliente Test",
     )
     use_case.assert_called_once_with(
         1,

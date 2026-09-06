@@ -20,6 +20,8 @@ class CreatePrintJobRequestDTO(BaseModel):
                     "client_code": "05451",
                     "client_name": "REPUESJOR SRL",
                     "payload": {
+                        "client_code": "05451",
+                        "client_name": "REPUESJOR SRL",
                         "order_number": "PED-2026-00045",
                         "address": "Av. Colon 1234",
                         "city": "Mar del Plata",

@@ -7,8 +7,8 @@ class RemitoItemDTO(BaseModel):
     cantidad: str = Field(..., description="Cantidad como string. Ej: '2'")
 
 class RemitoPayloadDTO(BaseModel):
-    client_code: Optional[str] = None
-    client_name: Optional[str] = None
+    client_code: str = Field(..., min_length=1, description="Código de cliente en el documento")
+    client_name: str = Field(..., min_length=1, description="Nombre de cliente en el documento")
     order_number: str = Field(default="", description="Numero de pedido como string")
     address: str = ""
     city: str = ""
